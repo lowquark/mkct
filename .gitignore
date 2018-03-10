@@ -1,8 +1,4 @@
 /dev/
-/mkct.llist
-/mkct.queue
-/mkct.map
-/mkct.objmap
 *.o
 *.swp
 *.swo

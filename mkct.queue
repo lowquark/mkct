@@ -1,0 +1,336 @@
+#!/usr/bin/bash
+
+set -u
+
+H_FILE=
+C_FILE=
+
+# TODO: Style, force overwrite, verbosity, output files, etc.
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -n) QUEUE_NAME="$2"; shift 2;;
+    -v) VALUE_TYPEDEF="$2"; shift 2;;
+
+    --name=*) QUEUE_NAME="${1#*=}"; shift 1;;
+    --value-type=*) VALUE_TYPEDEF="${1#*=}"; shift 1;;
+    --name|--value-type) echo "$1 requires an argument" >&2; exit 1;;
+
+    -*) echo "unknown option: $1" >&2; exit 1;;
+    *) echo "unknown option: $1" >&2; exit 1;;
+  esac
+done
+
+# Minimum set parameters
+if [ -z "$QUEUE_NAME" ]; then echo "no queue name specified! aborting." >&2; exit 1; fi
+if [ -z "$VALUE_TYPEDEF" ]; then echo "no value type specified! aborting." >&2; exit 1; fi
+
+# Derived parameters
+INCLUDE_GUARD="${QUEUE_NAME^^}_H"
+QUEUE_STRUCT="${QUEUE_NAME}"
+QUEUE_TYPEDEF="${QUEUE_NAME}_t"
+QUEUE_METHOD_INIT="${QUEUE_NAME}_init"
+QUEUE_METHOD_CLEAR="${QUEUE_NAME}_clear"
+QUEUE_METHOD_PUSH="${QUEUE_NAME}_push"
+QUEUE_METHOD_POP="${QUEUE_NAME}_pop"
+QUEUE_METHOD_PEEK="${QUEUE_NAME}_peek"
+QUEUE_METHOD_AT="${QUEUE_NAME}_at"
+ENTRY_STRUCT="${QUEUE_NAME}_entry"
+ENTRY_TYPEDEF="${QUEUE_NAME}_entry_t"
+
+# Overridable derived parameters
+if [ -z "$H_FILE" ]; then H_FILE="$QUEUE_NAME.h"; fi
+if [ -z "$C_FILE" ]; then C_FILE="$QUEUE_NAME.c"; fi
+
+# Print a summary
+echo "Header file   : ${H_FILE}" >&2
+echo "Source file   : ${C_FILE}" >&2
+echo "INCLUDE_GUARD : $INCLUDE_GUARD" >&2
+echo "QUEUE_STRUCT  : $QUEUE_STRUCT" >&2
+echo "QUEUE_TYPEDEF : $QUEUE_TYPEDEF" >&2
+echo "ENTRY_STRUCT  : $ENTRY_STRUCT" >&2
+echo "ENTRY_TYPEDEF : $ENTRY_TYPEDEF" >&2
+
+# Don't overwrite
+#if [ -f $H_FILE ]; then echo "\"$H_FILE\" already exists! aborting." >&2; exit 1; fi
+#if [ -f $C_FILE ]; then echo "\"$C_FILE\" already exists! aborting." >&2; exit 1; fi
+
+read -r -d '' UNLICENSE << "EOF"
+/* 
+ * This is free and unencumbered software released into the public domain.
+ * 
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ * 
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * For more information, please refer to <http://unlicense.org>
+ */
+EOF
+
+# Why yes, this is an entire header file
+read -r -d '' H_FILE_SRC << "EOF"
+#ifndef INCLUDE_GUARD
+#define INCLUDE_GUARD
+
+/*
+ * FIFO queue of `VALUE_TYPEDEF`s
+ */
+typedef struct QUEUE_STRUCT {
+  VALUE_TYPEDEF * buffer_begin;
+  VALUE_TYPEDEF * buffer_end;
+
+  VALUE_TYPEDEF * getptr;
+  VALUE_TYPEDEF * putptr;
+
+  long size;
+} QUEUE_TYPEDEF;
+
+/*
+ * Initializes the given queue to a valid state.
+ */
+void QUEUE_METHOD_INIT(QUEUE_TYPEDEF * q);
+
+/*
+ * Deletes all values present in the queue.
+ */
+void QUEUE_METHOD_CLEAR(QUEUE_TYPEDEF * q);
+
+/*
+ * Pushes a value onto the back of the queue. Reallocates buffer space if necessary.
+ *
+ * Return Value:
+ *   Returns 1 if successful, and 0 if memory allocation failed.
+ */
+int QUEUE_METHOD_PUSH(QUEUE_TYPEDEF * q, VALUE_TYPEDEF value);
+
+/*
+ * Pops a value from the front of the queue.
+ *
+ * Return Value:
+ *   Returns 1 if a value was popped, and 0 if the queue was empty.
+ */
+int QUEUE_METHOD_POP(QUEUE_TYPEDEF * q);
+
+/*
+ * Copies the value from the front of the queue into `value_out`.
+ *
+ * Return Value:
+ *   If the queue is empty, returns 0 and leaves `value_out` unmodified.
+ *   Returns 1 otherwise.
+ */
+int QUEUE_METHOD_PEEK(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out);
+
+/*
+ * Copies the value from the queue at the given index `idx` into `value_out`.
+ *
+ * Return Value:
+ *   If the queue is empty, or if idx is larger than the queue's size, returns
+ *   0 and leaves `value_out` unmodified. Returns 1 otherwise.
+ *
+ * Note:
+ *   An index of 0 is the front of the queue. The back of the queue is indexed
+ *   by the queue's size minus one.
+ */
+int QUEUE_METHOD_AT(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out, int idx);
+
+#endif
+EOF
+
+# Why yes, this is an entire C file
+read -r -d '' C_FILE_SRC << "EOF"
+
+#include "H_FILE"
+
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+
+#define INITIAL_SIZE 32
+
+
+static void deinit_value(VALUE_TYPEDEF value) {
+  /* TODO: Cleanup the VALUE_TYPEDEF, if applicable. This function is called
+   * when values are popped from the queue, and when the queue is cleared. */
+}
+
+
+void QUEUE_METHOD_INIT(QUEUE_TYPEDEF * q) {
+  q->buffer_begin = NULL;
+  q->buffer_end = NULL;
+  q->getptr = NULL;
+  q->putptr = NULL;
+  q->size = 0;
+}
+
+void QUEUE_METHOD_CLEAR(QUEUE_TYPEDEF * q) {
+  VALUE_TYPEDEF * valptr;
+
+  free(q->buffer_begin);
+
+  /* iterate over [getptr, putptr), call deinit */
+  if(q->size) {
+    do {
+      valptr = q->getptr;
+
+      deinit_value(*valptr);
+
+      valptr ++;
+      if(valptr == q->buffer_end) {
+        valptr = q->buffer_begin;
+      }
+    } while(valptr != q->putptr);
+  }
+
+  /* clean slate */
+  QUEUE_METHOD_INIT(q);
+}
+
+int QUEUE_METHOD_PUSH(QUEUE_TYPEDEF * q, VALUE_TYPEDEF value) {
+  VALUE_TYPEDEF * new_buffer_begin;
+  VALUE_TYPEDEF * wrap_point;
+  long new_buffer_size;
+
+  if(!q->buffer_begin) {
+    /* this buffer is null */
+    q->buffer_begin = malloc(INITIAL_SIZE*sizeof(VALUE_TYPEDEF));
+
+    /* couldn't alloc, escape before anything breaks */
+    if(!q->buffer_begin) { return 0; }
+
+    q->buffer_end   = q->buffer_begin + INITIAL_SIZE;
+    q->getptr       = q->buffer_begin;
+    q->putptr       = q->buffer_begin;
+  } else if(q->getptr == q->putptr && q->size != 0) {
+    /* full buffer condition */
+
+    /* sanity check */
+    assert(q->buffer_end - q->buffer_begin == q->size);
+
+    /* double previous buffer size */
+    new_buffer_size = 2*q->size;
+
+    /* alloc new buffer twice as large */
+    new_buffer_begin = malloc(new_buffer_size*sizeof(VALUE_TYPEDEF ));
+
+    /* couldn't alloc, escape before anything breaks */
+    if(!new_buffer_begin) { return 0; }
+
+    /* pointer within new_buffer where buffer_end lines up with */
+    wrap_point = new_buffer_begin + (q->buffer_end - q->putptr);
+
+    /* copy first part [putptr, buffer_end) to new_buffer_begin */
+    memcpy(new_buffer_begin, q->putptr, sizeof(VALUE_TYPEDEF)*(q->buffer_end - q->putptr));
+
+    /* copy second part [buffer_begin, putptr) to wrap_point */
+    memcpy(wrap_point, q->buffer_begin, sizeof(VALUE_TYPEDEF)*(q->putptr - q->buffer_begin));
+
+    /* new buffer has been initialized, replace old buffer */
+    free(q->buffer_begin);
+
+    q->buffer_begin = new_buffer_begin;
+    q->buffer_end   = new_buffer_begin + new_buffer_size;
+    q->getptr       = new_buffer_begin;
+    q->putptr       = new_buffer_begin + q->size;
+  }
+
+  /* store at put pointer and advance */
+  *q->putptr++ = value;
+
+  /* wrap put pointer at end */
+  if(q->putptr == q->buffer_end) {
+    q->putptr = q->buffer_begin;
+  }
+
+  /* keep track of size */
+  q->size ++;
+
+  /* return success */
+  return 1;
+}
+
+int QUEUE_METHOD_POP(QUEUE_TYPEDEF * q) {
+  if(q->size == 0) { return 0; }
+
+  deinit_value(*q->getptr);
+
+  q->getptr++;
+
+  /* wrap get pointer at end */
+  if(q->getptr == q->buffer_end) {
+    q->getptr = q->buffer_begin;
+  }
+
+  /* keep track of size */
+  q->size --;
+
+  return 1;
+}
+
+int QUEUE_METHOD_PEEK(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out) {
+  if(q->size == 0) { return 0; }
+
+  *value_out = *q->getptr;
+
+  return 1;
+}
+
+int QUEUE_METHOD_AT(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out, int idx) {
+  VALUE_TYPEDEF * elem_ptr;
+
+  if(idx < 0) { return 0; }
+
+  if(idx >= q->size) { return 0; }
+
+  elem_ptr = q->getptr + idx;
+
+  if(elem_ptr >= q->buffer_end) {
+    elem_ptr -= q->buffer_end - q->buffer_begin;
+  }
+
+  *value_out = *elem_ptr;
+
+  return 1;
+}
+
+EOF
+
+REPLACE="\
+s/INCLUDE_GUARD/$INCLUDE_GUARD/g;\
+s/QUEUE_STRUCT/$QUEUE_STRUCT/g;\
+s/QUEUE_TYPEDEF/$QUEUE_TYPEDEF/g;\
+s/QUEUE_METHOD_INIT/$QUEUE_METHOD_INIT/g;\
+s/QUEUE_METHOD_CLEAR/$QUEUE_METHOD_CLEAR/g;\
+s/QUEUE_METHOD_PUSH/$QUEUE_METHOD_PUSH/g;\
+s/QUEUE_METHOD_POP/$QUEUE_METHOD_POP/g;\
+s/QUEUE_METHOD_PEEK/$QUEUE_METHOD_PEEK/g;\
+s/QUEUE_METHOD_AT/$QUEUE_METHOD_AT/g;\
+s/VALUE_TYPEDEF/$VALUE_TYPEDEF/g;\
+s/H_FILE/$H_FILE/g;\
+s/C_FILE/$C_FILE/g"
+
+# Perform substitutions on header
+H_FILE_SRC=$(echo "$H_FILE_SRC" | sed "$REPLACE")
+#echo "writing \`$H_FILE\`" >&2
+echo -e "$UNLICENSE\n\n$H_FILE_SRC" > $H_FILE
+
+# Perform substitutions on source
+C_FILE_SRC=$(echo "$C_FILE_SRC" | sed "$REPLACE")
+#echo "writing \`$C_FILE\`" >&2
+echo -e "$UNLICENSE\n\n$C_FILE_SRC" > $C_FILE
+
