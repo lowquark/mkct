@@ -34,7 +34,7 @@ you to implement the hash function in `iimap.c`.
 Like `mkct.map`, but "owns" the objects that it contains. Calls an init and
 deinit on its values, and returns a NULL pointer for non-existent objects.
 
-    $ mkct.map --name=iobjmap --key-type=int --value-type=my_object_t
+    $ mkct.map --name=iobjmap --key-type=int --object-type=my_object_t
 
 `iobjmap.h` and `iobjmap.c` will be created. See `iobjmap.h` for usage. It's up to
 you to implement the init, deinit, and hash function in `iobjmap.c`.
