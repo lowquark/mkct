@@ -1,1 +1,9 @@
 /test_all
+/src/llist/ilist.h
+/src/llist/ilist.c
+/src/queue/iqueue.h
+/src/queue/iqueue.c
+/src/map/iimap.h
+/src/map/iimap.c
+/src/objmap/imap_obj.h
+/src/objmap/imap_obj.c
