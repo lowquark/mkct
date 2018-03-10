@@ -1,0 +1,11 @@
+--- imap_obj.h	2018-03-09 21:13:50.394696123 -0700
++++ imap_obj.fix.h	2018-03-09 21:13:44.188029268 -0700
+@@ -28,6 +28,8 @@
+ #ifndef IMAP_OBJ_H
+ #define IMAP_OBJ_H
+ 
++#include "obj.h"
++
+ struct imap_obj_entry;
+ 
+ /*
