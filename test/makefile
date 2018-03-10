@@ -29,25 +29,25 @@ test_all: $(OBJECTS)
 
 .PHONY: ilist_src
 ilist_src:
-	$(MKCT_LLIST) --name=ilist --value-type=int
+	$(MKCT_LLIST) --name=ilist --value-type=int --verbose
 	mv ilist.h src/llist/ilist.h
 	mv ilist.c src/llist/ilist.c
 
 .PHONY: iqueue_src
 iqueue_src:
-	$(MKCT_QUEUE) --name=iqueue --value-type=int
+	$(MKCT_QUEUE) --name=iqueue --value-type=int --verbose
 	mv iqueue.h src/queue/iqueue.h
 	mv iqueue.c src/queue/iqueue.c
 
 .PHONY: iimap_src
 iimap_src:
-	$(MKCT_MAP) --name=iimap --key-type=int --value-type=int
+	$(MKCT_MAP) --name=iimap --key-type=int --value-type=int --verbose
 	mv iimap.h src/map/iimap.h
 	mv iimap.c src/map/iimap.c
 
 .PHONY: imap_obj_src
 imap_obj_src:
-	$(MKCT_OBJMAP) --name=imap_obj --key-type=int --value-type=obj_t
+	$(MKCT_OBJMAP) --name=imap_obj --key-type=int --object-type=obj_t --verbose
 	mv imap_obj.h src/objmap/imap_obj.h
 	mv imap_obj.c src/objmap/imap_obj.c
 	patch -d src/objmap/ < src/objmap/imap_obj.c.patch

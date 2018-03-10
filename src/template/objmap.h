@@ -4,30 +4,30 @@
 struct ENTRY_STRUCT;
 
 /*
- * Hash map from `KEY_TYPEDEF` keys to `VALUE_TYPEDEF` values. Manages
- * initialization and allocation of values, and stores shallow copies of their
+ * Hash map from `KEY_TYPE` keys to `OBJECT_TYPE` values. Manages
+ * initialization and allocation of objects, and stores shallow copies of their
  * keys.
  */
 typedef struct OBJMAP_STRUCT {
   struct ENTRY_STRUCT ** table;
   unsigned long table_size;
   unsigned long entry_count;
-} OBJMAP_TYPEDEF;
+} OBJMAP_TYPE;
 
-/* Initializes the given `OBJMAP_TYPEDEF` to a valid, empty state.
+/* Initializes the given `OBJMAP_TYPE` to a valid, empty state.
  *
  * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to erase all values in the map.
  */
-void OBJMAP_METHOD_INIT(OBJMAP_TYPEDEF * map);
+void OBJMAP_METHOD_INIT(OBJMAP_TYPE * map);
 
 /* Destroys all values in the map, and destroys all allocated memory owned by the map. */
-void OBJMAP_METHOD_CLEAR(OBJMAP_TYPEDEF * map);
+void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map);
 
 /* Looks up the value using a given key.
  *
  * Returns a pointer to the found value. Returns NULL if no value has key `key`.
  */
-VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
+OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key);
 
 /* Creates a new value for the given key.
  *
@@ -35,12 +35,12 @@ VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
  *
  * Returns a pointer to the new entry.
  */
-VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
+OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key);
 
 /* Finds and destroys the value with the given key.
  *
  * Returns 1 if the value was found (and destroyed) and 0 otherwise.
  */
-int OBJMAP_METHOD_DESTROY(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
+int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key);
 
 #endif

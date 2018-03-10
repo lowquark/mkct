@@ -2,27 +2,27 @@
 #define INCLUDE_GUARD
 
 /*
- * FIFO queue of `VALUE_TYPEDEF`s
+ * FIFO queue of `VALUE_TYPE`s
  */
 typedef struct QUEUE_STRUCT {
-  VALUE_TYPEDEF * buffer_begin;
-  VALUE_TYPEDEF * buffer_end;
+  VALUE_TYPE * buffer_begin;
+  VALUE_TYPE * buffer_end;
 
-  VALUE_TYPEDEF * getptr;
-  VALUE_TYPEDEF * putptr;
+  VALUE_TYPE * getptr;
+  VALUE_TYPE * putptr;
 
   long size;
-} QUEUE_TYPEDEF;
+} QUEUE_TYPE;
 
 /*
  * Initializes the given queue to a valid state.
  */
-void QUEUE_METHOD_INIT(QUEUE_TYPEDEF * q);
+void QUEUE_METHOD_INIT(QUEUE_TYPE * q);
 
 /*
  * Deletes all values present in the queue.
  */
-void QUEUE_METHOD_CLEAR(QUEUE_TYPEDEF * q);
+void QUEUE_METHOD_CLEAR(QUEUE_TYPE * q);
 
 /*
  * Pushes a value onto the back of the queue. Reallocates buffer space if necessary.
@@ -30,7 +30,7 @@ void QUEUE_METHOD_CLEAR(QUEUE_TYPEDEF * q);
  * Return Value:
  *   Returns 1 if successful, and 0 if memory allocation failed.
  */
-int QUEUE_METHOD_PUSH(QUEUE_TYPEDEF * q, VALUE_TYPEDEF value);
+int QUEUE_METHOD_PUSH(QUEUE_TYPE * q, VALUE_TYPE value);
 
 /*
  * Pops a value from the front of the queue.
@@ -38,7 +38,7 @@ int QUEUE_METHOD_PUSH(QUEUE_TYPEDEF * q, VALUE_TYPEDEF value);
  * Return Value:
  *   Returns 1 if a value was popped, and 0 if the queue was empty.
  */
-int QUEUE_METHOD_POP(QUEUE_TYPEDEF * q);
+int QUEUE_METHOD_POP(QUEUE_TYPE * q);
 
 /*
  * Copies the value from the front of the queue into `value_out`.
@@ -47,7 +47,7 @@ int QUEUE_METHOD_POP(QUEUE_TYPEDEF * q);
  *   If the queue is empty, returns 0 and leaves `value_out` unmodified.
  *   Returns 1 otherwise.
  */
-int QUEUE_METHOD_PEEK(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out);
+int QUEUE_METHOD_PEEK(QUEUE_TYPE * q, VALUE_TYPE * value_out);
 
 /*
  * Copies the value from the queue at the given index `idx` into `value_out`.
@@ -60,6 +60,6 @@ int QUEUE_METHOD_PEEK(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out);
  *   An index of 0 is the front of the queue. The back of the queue is indexed
  *   by the queue's size minus one.
  */
-int QUEUE_METHOD_AT(QUEUE_TYPEDEF * q, VALUE_TYPEDEF * value_out, int idx);
+int QUEUE_METHOD_AT(QUEUE_TYPE * q, VALUE_TYPE * value_out, int idx);
 
 #endif

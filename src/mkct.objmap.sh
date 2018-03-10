@@ -2,61 +2,99 @@
 
 set -u
 
+NAME=
 H_FILE=
 C_FILE=
+VERBOSE=0
+SHOWONLY=0
 
-# TODO: Style, force overwrite, verbosity, output files, etc.
+function print_usage() {
+  echo "Usage: mkct.llist [OPTIONS]...                                    " >&2
+  echo "Generate a map from given key/object types in C                   " >&2
+  echo "                                                                  " >&2
+  echo "  --name=[NAME]           Set list name/prefix                    " >&2
+  echo "  --key-type=[TYPE]       Set type of keys indexed by the map     " >&2
+  echo "  --object-type=[TYPE]     Set type of values contained in the map " >&2
+  echo "                                                                  " >&2
+  echo "  --output-header=[PATH]  Set C header output file (.h)           " >&2
+  echo "  --output-source=[PATH]  Set C source output file (.c)           " >&2
+  echo "                                                                  " >&2
+  echo "  --show-only             Don't produce output files, only show   " >&2
+  echo "                            substitutions to be made              " >&2
+  echo "  -v,--verbose            Set verbose output                      " >&2
+  echo "  -h,--help               Show this usage and exit                " >&2
+}
+
+if [ "$#" -eq 0 ]; then
+  print_usage
+  exit 1
+fi
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    -n) OBJMAP_NAME="$2"; shift 2;;
-    -k) KEY_TYPEDEF="$2"; shift 2;;
-    -v) VALUE_TYPEDEF="$2"; shift 2;;
+    --name=*) NAME="${1#*=}"; shift 1;;
+    --key-type=*) KEY_TYPE="${1#*=}"; shift 1;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1;;
+    --output-header=*) H_FILE="${1#*=}"; shift 1;;
+    --output-source=*) C_FILE="${1#*=}"; shift 1;;
 
-    --name=*) OBJMAP_NAME="${1#*=}"; shift 1;;
-    --key-type=*) KEY_TYPEDEF="${1#*=}"; shift 1;;
-    --value-type=*) VALUE_TYPEDEF="${1#*=}"; shift 1;;
-    --name|--key-type|--value-type) echo "$1 requires an argument" >&2; exit 1;;
+    --name|--key-type|--object-type|--output-header|--output-source) \
+      echo "$1 requires an argument" >&2; print_usage; exit 1;;
 
-    -*) echo "unknown option: $1" >&2; exit 1;;
-    *) echo "unknown option: $1" >&2; exit 1;;
+    -v|--verbose) VERBOSE=1; shift 1;;
+    -h|--help)    print_usage; exit 0;;
+    --show-only)  SHOWONLY=1; shift 1;;
+
+    -*) echo "unknown option: $1" >&2; print_usage; exit 1;;
+    *) echo "unknown option: $1" >&2; print_usage; exit 1;;
   esac
 done
 
 # Minimum set parameters
-if [ -z "$OBJMAP_NAME" ]; then echo "no name specified! aborting." >&2; exit 1; fi
-if [ -z "$KEY_TYPEDEF" ]; then echo "no key type specified! aborting." >&2; exit 1; fi
-if [ -z "$VALUE_TYPEDEF" ]; then echo "no value type specified! aborting." >&2; exit 1; fi
-
-# Derived parameters
-INCLUDE_GUARD="${OBJMAP_NAME^^}_H"
-OBJMAP_STRUCT="$OBJMAP_NAME"
-OBJMAP_TYPEDEF="${OBJMAP_NAME}_t"
-OBJMAP_METHOD_INIT="${OBJMAP_NAME}_init"
-OBJMAP_METHOD_CLEAR="${OBJMAP_NAME}_clear"
-OBJMAP_METHOD_FIND="${OBJMAP_NAME}_find"
-OBJMAP_METHOD_CREATE="${OBJMAP_NAME}_create"
-OBJMAP_METHOD_DESTROY="${OBJMAP_NAME}_destroy"
-ENTRY_STRUCT="${OBJMAP_NAME}_entry"
-ENTRY_TYPEDEF="${OBJMAP_NAME}_entry_t"
+if [ -z "$NAME" ]; then echo "no name specified! aborting." >&2; print_usage; exit 1; fi
+if [ -z "$KEY_TYPE" ]; then echo "no key type specified! aborting." >&2; print_usage; exit 1; fi
+if [ -z "$OBJECT_TYPE" ]; then echo "no value type specified! aborting." >&2; print_usage; exit 1; fi
 
 # Overridable derived parameters
-if [ -z "$H_FILE" ]; then H_FILE="$OBJMAP_NAME.h"; fi
-if [ -z "$C_FILE" ]; then C_FILE="$OBJMAP_NAME.c"; fi
+if [ -z "$H_FILE" ]; then H_FILE="$NAME.h"; fi
+if [ -z "$C_FILE" ]; then C_FILE="$NAME.c"; fi
 
-# Print a summary
-#echo "Header file    : ${H_FILE}" >&2
-#echo "Source file    : ${C_FILE}" >&2
-#echo "INCLUDE_GUARD  : $INCLUDE_GUARD" >&2
-#echo "OBJMAP_STRUCT  : $OBJMAP_STRUCT" >&2
-#echo "OBJMAP_TYPEDEF : $OBJMAP_TYPEDEF" >&2
-#echo "ENTRY_STRUCT   : $ENTRY_STRUCT" >&2
-#echo "ENTRY_TYPEDEF  : $ENTRY_TYPEDEF" >&2
+# Replace non alphanumeric characters with _
+INCLUDE_GUARD="_${H_FILE//[^a-zA-Z0-9]/_}_"
+INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 
-# Don't overwrite
-#if [ -f $H_FILE ]; then echo "\"$H_FILE\" already exists! aborting." >&2; exit 1; fi
-#if [ -f $C_FILE ]; then echo "\"$C_FILE\" already exists! aborting." >&2; exit 1; fi
+OBJMAP_STRUCT="$NAME"
+OBJMAP_TYPE="${NAME}_t"
+ENTRY_STRUCT="${NAME}_entry"
+ENTRY_TYPE="${NAME}_entry_t"
+OBJMAP_METHOD_INIT="${NAME}_init"
+OBJMAP_METHOD_CLEAR="${NAME}_clear"
+OBJMAP_METHOD_FIND="${NAME}_find"
+OBJMAP_METHOD_CREATE="${NAME}_create"
+OBJMAP_METHOD_DESTROY="${NAME}_destroy"
 
-read -r -d '' UNLICENSE << "EOF"
+if [ $VERBOSE -eq 1 -o $SHOWONLY -eq 1 ]; then
+  # Print a summary
+  echo "H_FILE                : ${H_FILE}" >&2
+  echo "C_FILE                : ${C_FILE}" >&2
+  echo "INCLUDE_GUARD         : ${INCLUDE_GUARD}" >&2
+  echo "KEY_TYPE              : ${KEY_TYPE}" >&2
+  echo "OBJECT_TYPE           : ${OBJECT_TYPE}" >&2
+  echo "OBJMAP_STRUCT         : ${OBJMAP_STRUCT}" >&2
+  echo "OBJMAP_TYPE           : ${OBJMAP_TYPE}" >&2
+  echo "ENTRY_STRUCT          : ${ENTRY_STRUCT}" >&2
+  echo "ENTRY_TYPE            : ${ENTRY_TYPE}" >&2
+  echo "OBJMAP_METHOD_INIT    : ${OBJMAP_METHOD_INIT}" >&2
+  echo "OBJMAP_METHOD_CLEAR   : ${OBJMAP_METHOD_CLEAR}" >&2
+  echo "OBJMAP_METHOD_FIND    : ${OBJMAP_METHOD_FIND}" >&2
+  echo "OBJMAP_METHOD_CREATE  : ${OBJMAP_METHOD_CREATE}" >&2
+  echo "OBJMAP_METHOD_DESTROY : ${OBJMAP_METHOD_DESTROY}" >&2
+fi
+
+# Stop here if just showing output
+if [ $SHOWONLY -eq 1 ]; then exit 0; fi
+
+read -r -d '' LICENSE << "EOF"
 /* 
  * This is free and unencumbered software released into the public domain.
  * 
@@ -98,26 +136,26 @@ EOF
 REPLACE="\
 s/INCLUDE_GUARD/$INCLUDE_GUARD/g;\
 s/OBJMAP_STRUCT/$OBJMAP_STRUCT/g;\
-s/OBJMAP_TYPEDEF/$OBJMAP_TYPEDEF/g;\
+s/OBJMAP_TYPE/$OBJMAP_TYPE/g;\
 s/OBJMAP_METHOD_INIT/$OBJMAP_METHOD_INIT/g;\
 s/OBJMAP_METHOD_CLEAR/$OBJMAP_METHOD_CLEAR/g;\
 s/OBJMAP_METHOD_FIND/$OBJMAP_METHOD_FIND/g;\
 s/OBJMAP_METHOD_CREATE/$OBJMAP_METHOD_CREATE/g;\
 s/OBJMAP_METHOD_DESTROY/$OBJMAP_METHOD_DESTROY/g;\
 s/ENTRY_STRUCT/$ENTRY_STRUCT/g;\
-s/ENTRY_TYPEDEF/$ENTRY_TYPEDEF/g;\
-s/KEY_TYPEDEF/$KEY_TYPEDEF/g;\
-s/VALUE_TYPEDEF/$VALUE_TYPEDEF/g;\
+s/ENTRY_TYPE/$ENTRY_TYPE/g;\
+s/KEY_TYPE/$KEY_TYPE/g;\
+s/OBJECT_TYPE/$OBJECT_TYPE/g;\
 s/H_FILE/$H_FILE/g;\
 s/C_FILE/$C_FILE/g"
 
 # Perform substitutions on header
 H_FILE_SRC=$(echo "$H_FILE_SRC" | sed "$REPLACE")
-#echo "writing \`$H_FILE\`" >&2
-echo -e "$UNLICENSE\n\n$H_FILE_SRC" > $H_FILE
+if [ $VERBOSE -eq 1 ]; then echo "writing \`$H_FILE\`" >&2; fi
+echo -e "$LICENSE\n\n$H_FILE_SRC" > $H_FILE
 
 # Perform substitutions on source
 C_FILE_SRC=$(echo "$C_FILE_SRC" | sed "$REPLACE")
-#echo "writing \`$C_FILE\`" >&2
-echo -e "$UNLICENSE\n\n$C_FILE_SRC" > $C_FILE
+if [ $VERBOSE -eq 1 ]; then echo "writing \`$C_FILE\`" >&2; fi
+echo -e "$LICENSE\n\n$C_FILE_SRC" > $C_FILE
 

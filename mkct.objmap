@@ -2,61 +2,99 @@
 
 set -u
 
+NAME=
 H_FILE=
 C_FILE=
+VERBOSE=0
+SHOWONLY=0
 
-# TODO: Style, force overwrite, verbosity, output files, etc.
+function print_usage() {
+  echo "Usage: mkct.llist [OPTIONS]...                                    " >&2
+  echo "Generate a map from given key/object types in C                   " >&2
+  echo "                                                                  " >&2
+  echo "  --name=[NAME]           Set list name/prefix                    " >&2
+  echo "  --key-type=[TYPE]       Set type of keys indexed by the map     " >&2
+  echo "  --object-type=[TYPE]     Set type of values contained in the map " >&2
+  echo "                                                                  " >&2
+  echo "  --output-header=[PATH]  Set C header output file (.h)           " >&2
+  echo "  --output-source=[PATH]  Set C source output file (.c)           " >&2
+  echo "                                                                  " >&2
+  echo "  --show-only             Don't produce output files, only show   " >&2
+  echo "                            substitutions to be made              " >&2
+  echo "  -v,--verbose            Set verbose output                      " >&2
+  echo "  -h,--help               Show this usage and exit                " >&2
+}
+
+if [ "$#" -eq 0 ]; then
+  print_usage
+  exit 1
+fi
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    -n) OBJMAP_NAME="$2"; shift 2;;
-    -k) KEY_TYPEDEF="$2"; shift 2;;
-    -v) VALUE_TYPEDEF="$2"; shift 2;;
+    --name=*) NAME="${1#*=}"; shift 1;;
+    --key-type=*) KEY_TYPE="${1#*=}"; shift 1;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1;;
+    --output-header=*) H_FILE="${1#*=}"; shift 1;;
+    --output-source=*) C_FILE="${1#*=}"; shift 1;;
 
-    --name=*) OBJMAP_NAME="${1#*=}"; shift 1;;
-    --key-type=*) KEY_TYPEDEF="${1#*=}"; shift 1;;
-    --value-type=*) VALUE_TYPEDEF="${1#*=}"; shift 1;;
-    --name|--key-type|--value-type) echo "$1 requires an argument" >&2; exit 1;;
+    --name|--key-type|--object-type|--output-header|--output-source) \
+      echo "$1 requires an argument" >&2; print_usage; exit 1;;
 
-    -*) echo "unknown option: $1" >&2; exit 1;;
-    *) echo "unknown option: $1" >&2; exit 1;;
+    -v|--verbose) VERBOSE=1; shift 1;;
+    -h|--help)    print_usage; exit 0;;
+    --show-only)  SHOWONLY=1; shift 1;;
+
+    -*) echo "unknown option: $1" >&2; print_usage; exit 1;;
+    *) echo "unknown option: $1" >&2; print_usage; exit 1;;
   esac
 done
 
 # Minimum set parameters
-if [ -z "$OBJMAP_NAME" ]; then echo "no name specified! aborting." >&2; exit 1; fi
-if [ -z "$KEY_TYPEDEF" ]; then echo "no key type specified! aborting." >&2; exit 1; fi
-if [ -z "$VALUE_TYPEDEF" ]; then echo "no value type specified! aborting." >&2; exit 1; fi
-
-# Derived parameters
-INCLUDE_GUARD="${OBJMAP_NAME^^}_H"
-OBJMAP_STRUCT="$OBJMAP_NAME"
-OBJMAP_TYPEDEF="${OBJMAP_NAME}_t"
-OBJMAP_METHOD_INIT="${OBJMAP_NAME}_init"
-OBJMAP_METHOD_CLEAR="${OBJMAP_NAME}_clear"
-OBJMAP_METHOD_FIND="${OBJMAP_NAME}_find"
-OBJMAP_METHOD_CREATE="${OBJMAP_NAME}_create"
-OBJMAP_METHOD_DESTROY="${OBJMAP_NAME}_destroy"
-ENTRY_STRUCT="${OBJMAP_NAME}_entry"
-ENTRY_TYPEDEF="${OBJMAP_NAME}_entry_t"
+if [ -z "$NAME" ]; then echo "no name specified! aborting." >&2; print_usage; exit 1; fi
+if [ -z "$KEY_TYPE" ]; then echo "no key type specified! aborting." >&2; print_usage; exit 1; fi
+if [ -z "$OBJECT_TYPE" ]; then echo "no value type specified! aborting." >&2; print_usage; exit 1; fi
 
 # Overridable derived parameters
-if [ -z "$H_FILE" ]; then H_FILE="$OBJMAP_NAME.h"; fi
-if [ -z "$C_FILE" ]; then C_FILE="$OBJMAP_NAME.c"; fi
+if [ -z "$H_FILE" ]; then H_FILE="$NAME.h"; fi
+if [ -z "$C_FILE" ]; then C_FILE="$NAME.c"; fi
 
-# Print a summary
-#echo "Header file    : ${H_FILE}" >&2
-#echo "Source file    : ${C_FILE}" >&2
-#echo "INCLUDE_GUARD  : $INCLUDE_GUARD" >&2
-#echo "OBJMAP_STRUCT  : $OBJMAP_STRUCT" >&2
-#echo "OBJMAP_TYPEDEF : $OBJMAP_TYPEDEF" >&2
-#echo "ENTRY_STRUCT   : $ENTRY_STRUCT" >&2
-#echo "ENTRY_TYPEDEF  : $ENTRY_TYPEDEF" >&2
+# Replace non alphanumeric characters with _
+INCLUDE_GUARD="_${H_FILE//[^a-zA-Z0-9]/_}_"
+INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 
-# Don't overwrite
-#if [ -f $H_FILE ]; then echo "\"$H_FILE\" already exists! aborting." >&2; exit 1; fi
-#if [ -f $C_FILE ]; then echo "\"$C_FILE\" already exists! aborting." >&2; exit 1; fi
+OBJMAP_STRUCT="$NAME"
+OBJMAP_TYPE="${NAME}_t"
+ENTRY_STRUCT="${NAME}_entry"
+ENTRY_TYPE="${NAME}_entry_t"
+OBJMAP_METHOD_INIT="${NAME}_init"
+OBJMAP_METHOD_CLEAR="${NAME}_clear"
+OBJMAP_METHOD_FIND="${NAME}_find"
+OBJMAP_METHOD_CREATE="${NAME}_create"
+OBJMAP_METHOD_DESTROY="${NAME}_destroy"
 
-read -r -d '' UNLICENSE << "EOF"
+if [ $VERBOSE -eq 1 -o $SHOWONLY -eq 1 ]; then
+  # Print a summary
+  echo "H_FILE                : ${H_FILE}" >&2
+  echo "C_FILE                : ${C_FILE}" >&2
+  echo "INCLUDE_GUARD         : ${INCLUDE_GUARD}" >&2
+  echo "KEY_TYPE              : ${KEY_TYPE}" >&2
+  echo "OBJECT_TYPE           : ${OBJECT_TYPE}" >&2
+  echo "OBJMAP_STRUCT         : ${OBJMAP_STRUCT}" >&2
+  echo "OBJMAP_TYPE           : ${OBJMAP_TYPE}" >&2
+  echo "ENTRY_STRUCT          : ${ENTRY_STRUCT}" >&2
+  echo "ENTRY_TYPE            : ${ENTRY_TYPE}" >&2
+  echo "OBJMAP_METHOD_INIT    : ${OBJMAP_METHOD_INIT}" >&2
+  echo "OBJMAP_METHOD_CLEAR   : ${OBJMAP_METHOD_CLEAR}" >&2
+  echo "OBJMAP_METHOD_FIND    : ${OBJMAP_METHOD_FIND}" >&2
+  echo "OBJMAP_METHOD_CREATE  : ${OBJMAP_METHOD_CREATE}" >&2
+  echo "OBJMAP_METHOD_DESTROY : ${OBJMAP_METHOD_DESTROY}" >&2
+fi
+
+# Stop here if just showing output
+if [ $SHOWONLY -eq 1 ]; then exit 0; fi
+
+read -r -d '' LICENSE << "EOF"
 /* 
  * This is free and unencumbered software released into the public domain.
  * 
@@ -93,30 +131,30 @@ read -r -d '' H_FILE_SRC << "EOF"
 struct ENTRY_STRUCT;
 
 /*
- * Hash map from `KEY_TYPEDEF` keys to `VALUE_TYPEDEF` values. Manages
- * initialization and allocation of values, and stores shallow copies of their
+ * Hash map from `KEY_TYPE` keys to `OBJECT_TYPE` values. Manages
+ * initialization and allocation of objects, and stores shallow copies of their
  * keys.
  */
 typedef struct OBJMAP_STRUCT {
   struct ENTRY_STRUCT ** table;
   unsigned long table_size;
   unsigned long entry_count;
-} OBJMAP_TYPEDEF;
+} OBJMAP_TYPE;
 
-/* Initializes the given `OBJMAP_TYPEDEF` to a valid, empty state.
+/* Initializes the given `OBJMAP_TYPE` to a valid, empty state.
  *
  * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to erase all values in the map.
  */
-void OBJMAP_METHOD_INIT(OBJMAP_TYPEDEF * map);
+void OBJMAP_METHOD_INIT(OBJMAP_TYPE * map);
 
 /* Destroys all values in the map, and destroys all allocated memory owned by the map. */
-void OBJMAP_METHOD_CLEAR(OBJMAP_TYPEDEF * map);
+void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map);
 
 /* Looks up the value using a given key.
  *
  * Returns a pointer to the found value. Returns NULL if no value has key `key`.
  */
-VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
+OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key);
 
 /* Creates a new value for the given key.
  *
@@ -124,13 +162,13 @@ VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
  *
  * Returns a pointer to the new entry.
  */
-VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
+OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key);
 
 /* Finds and destroys the value with the given key.
  *
  * Returns 1 if the value was found (and destroyed) and 0 otherwise.
  */
-int OBJMAP_METHOD_DESTROY(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key);
+int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key);
 
 #endif
 EOF
@@ -147,22 +185,22 @@ read -r -d '' C_FILE_SRC << "EOF"
 
 typedef struct ENTRY_STRUCT {
   struct ENTRY_STRUCT * next;
-  KEY_TYPEDEF   key;
-  VALUE_TYPEDEF value;
-} ENTRY_TYPEDEF;
+  KEY_TYPE   key;
+  OBJECT_TYPE value;
+} ENTRY_TYPE;
 
 /*** type specific functionaility ***/
 
-/* TODO: Implement hash for KEY_TYPEDEF. */
-static unsigned long hash_key(KEY_TYPEDEF key) {
+/* TODO: Implement hash for KEY_TYPE. */
+static unsigned long hash_key(KEY_TYPE key) {
   return (*(unsigned long*)&key);
 }
 
 /* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
  *
  * Alternatively:
- * static int compare_key(KEY_TYPEDEF key0, KEY_TYPEDEF key1) {
- *   return memcmp(&key0, &key1, sizeof(KEY_TYPEDEF)) == 0;
+ * static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
+ *   return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
  * }
  */
 
@@ -170,42 +208,42 @@ static unsigned long hash_key(KEY_TYPEDEF key) {
 
 /* TODO: Cleanup the key, if applicable. This function is called
  * when entries are erased, but not when they are overwritten. */
-static void deinit_key(KEY_TYPEDEF * key) {
+static void deinit_key(KEY_TYPE * key) {
 }
 
 /* TODO: Initialize a value, if applicable. This function is called
  * when entries created or overwritten. */
-static void init_value(VALUE_TYPEDEF * value) {
-  memset(value, 0, sizeof(VALUE_TYPEDEF));
+static void init_value(OBJECT_TYPE * value) {
+  memset(value, 0, sizeof(OBJECT_TYPE));
 }
 
 /* TODO: Cleanup a value, if applicable. This function is called
  * when entries are erased or overwritten. */
-static void deinit_value(VALUE_TYPEDEF * value) {
-  memset(value, 0, sizeof(VALUE_TYPEDEF));
+static void deinit_value(OBJECT_TYPE * value) {
+  memset(value, 0, sizeof(OBJECT_TYPE));
 }
 
 /*** general functionaility ***/
 
 static const unsigned long initial_size = 32;
 
-static unsigned long hash_idx(KEY_TYPEDEF key, unsigned long table_size) {
+static unsigned long hash_idx(KEY_TYPE key, unsigned long table_size) {
   assert(table_size > 0);
 
   return hash_key(key) % table_size;
 }
 
-static ENTRY_TYPEDEF ** bucket_of(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
+static ENTRY_TYPE ** bucket_of(OBJMAP_TYPE * map, KEY_TYPE key) {
   assert(map->table);
 
   return map->table + hash_idx(key, map->table_size);
 }
 
-static int resize_table(OBJMAP_TYPEDEF * map, unsigned long newsize) {
+static int resize_table(OBJMAP_TYPE * map, unsigned long newsize) {
   unsigned long i;
   unsigned long table_size = map->table_size;
-  ENTRY_TYPEDEF ** table = map->table;
-  ENTRY_TYPEDEF ** newtable = calloc(sizeof(*newtable), newsize);
+  ENTRY_TYPE ** table = map->table;
+  ENTRY_TYPE ** newtable = calloc(sizeof(*newtable), newsize);
 
   if(!newtable) {
     return 0;
@@ -213,16 +251,16 @@ static int resize_table(OBJMAP_TYPEDEF * map, unsigned long newsize) {
 
   for(i = 0 ; i < table_size ; i ++) {
     /* free chain */
-    ENTRY_TYPEDEF * entry = table[i];
+    ENTRY_TYPE * entry = table[i];
 
     while(entry) {
       /* save next pointer */
-      ENTRY_TYPEDEF * next = entry->next;
+      ENTRY_TYPE * next = entry->next;
 
       unsigned long idx = hash_idx(entry->key, newsize);
 
       /* lookup chain in the new table */
-      ENTRY_TYPEDEF ** slot = newtable + idx;
+      ENTRY_TYPE ** slot = newtable + idx;
 
       /* advance slot in the new chain */
       while(*slot) {
@@ -246,24 +284,24 @@ static int resize_table(OBJMAP_TYPEDEF * map, unsigned long newsize) {
   return 1;
 }
 
-void OBJMAP_METHOD_INIT(OBJMAP_TYPEDEF * m) {
+void OBJMAP_METHOD_INIT(OBJMAP_TYPE * m) {
   m->table       = NULL;
   m->table_size  = 0;
   m->entry_count = 0;
 }
 
-void OBJMAP_METHOD_CLEAR(OBJMAP_TYPEDEF * map) {
+void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map) {
   unsigned long i;
   unsigned long table_size = map->table_size;
-  ENTRY_TYPEDEF ** table = map->table;
+  ENTRY_TYPE ** table = map->table;
 
   for(i = 0 ; i < table_size ; i ++) {
     /* free chain */
-    ENTRY_TYPEDEF * entry = table[i];
+    ENTRY_TYPE * entry = table[i];
 
     while(entry) {
       /* cache next pointer */
-      ENTRY_TYPEDEF * next = entry->next;
+      ENTRY_TYPE * next = entry->next;
       /* destroy this one */
       deinit_key(&entry->key);
       deinit_value(&entry->value);
@@ -283,8 +321,8 @@ void OBJMAP_METHOD_CLEAR(OBJMAP_TYPEDEF * map) {
   map->table_size = 0;
 }
 
-VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
-  ENTRY_TYPEDEF * list;
+OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key) {
+  ENTRY_TYPE * list;
 
   if(map->table == NULL) { return NULL; }
 
@@ -300,12 +338,12 @@ VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
   return NULL;
 }
 
-VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
+OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
   assert(map);
 
   if(map->table == NULL) { 
     /* allocate since not allocated already */
-    map->table = calloc(sizeof(ENTRY_TYPEDEF *), initial_size);
+    map->table = calloc(sizeof(ENTRY_TYPE *), initial_size);
 
     /* couldn't alloc, escape before anything breaks */
     if(!map->table) { return NULL; }
@@ -318,11 +356,11 @@ VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
     }
   }
 
-  ENTRY_TYPEDEF ** slot = bucket_of(map, key);
+  ENTRY_TYPE ** slot = bucket_of(map, key);
 
   /* advance last slot */
   while(*slot) {
-    ENTRY_TYPEDEF * entry = *slot;
+    ENTRY_TYPE * entry = *slot;
 
     if(compare_key(entry->key, key)) {
       /* already exists, only deinit value, not key */
@@ -336,7 +374,7 @@ VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
   }
 
   /* reached end of chain, create a new entry */
-  ENTRY_TYPEDEF * new_entry = malloc(sizeof(*new_entry));
+  ENTRY_TYPE * new_entry = malloc(sizeof(*new_entry));
 
   /* couldn't alloc, escape before anything breaks */
   if(!new_entry) { return NULL; }
@@ -354,13 +392,13 @@ VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
 }
 
 
-int OBJMAP_METHOD_DESTROY(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
+int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key) {
   if(map->table == NULL) { return 0; }
 
-  ENTRY_TYPEDEF ** slot = bucket_of(map, key);
+  ENTRY_TYPE ** slot = bucket_of(map, key);
 
   while(*slot) {
-    ENTRY_TYPEDEF * entry = *slot;
+    ENTRY_TYPE * entry = *slot;
 
     if(compare_key(entry->key, key)) {
       /* matches, skip over */
@@ -389,26 +427,26 @@ EOF
 REPLACE="\
 s/INCLUDE_GUARD/$INCLUDE_GUARD/g;\
 s/OBJMAP_STRUCT/$OBJMAP_STRUCT/g;\
-s/OBJMAP_TYPEDEF/$OBJMAP_TYPEDEF/g;\
+s/OBJMAP_TYPE/$OBJMAP_TYPE/g;\
 s/OBJMAP_METHOD_INIT/$OBJMAP_METHOD_INIT/g;\
 s/OBJMAP_METHOD_CLEAR/$OBJMAP_METHOD_CLEAR/g;\
 s/OBJMAP_METHOD_FIND/$OBJMAP_METHOD_FIND/g;\
 s/OBJMAP_METHOD_CREATE/$OBJMAP_METHOD_CREATE/g;\
 s/OBJMAP_METHOD_DESTROY/$OBJMAP_METHOD_DESTROY/g;\
 s/ENTRY_STRUCT/$ENTRY_STRUCT/g;\
-s/ENTRY_TYPEDEF/$ENTRY_TYPEDEF/g;\
-s/KEY_TYPEDEF/$KEY_TYPEDEF/g;\
-s/VALUE_TYPEDEF/$VALUE_TYPEDEF/g;\
+s/ENTRY_TYPE/$ENTRY_TYPE/g;\
+s/KEY_TYPE/$KEY_TYPE/g;\
+s/OBJECT_TYPE/$OBJECT_TYPE/g;\
 s/H_FILE/$H_FILE/g;\
 s/C_FILE/$C_FILE/g"
 
 # Perform substitutions on header
 H_FILE_SRC=$(echo "$H_FILE_SRC" | sed "$REPLACE")
-#echo "writing \`$H_FILE\`" >&2
-echo -e "$UNLICENSE\n\n$H_FILE_SRC" > $H_FILE
+if [ $VERBOSE -eq 1 ]; then echo "writing \`$H_FILE\`" >&2; fi
+echo -e "$LICENSE\n\n$H_FILE_SRC" > $H_FILE
 
 # Perform substitutions on source
 C_FILE_SRC=$(echo "$C_FILE_SRC" | sed "$REPLACE")
-#echo "writing \`$C_FILE\`" >&2
-echo -e "$UNLICENSE\n\n$C_FILE_SRC" > $C_FILE
+if [ $VERBOSE -eq 1 ]; then echo "writing \`$C_FILE\`" >&2; fi
+echo -e "$LICENSE\n\n$C_FILE_SRC" > $C_FILE
 

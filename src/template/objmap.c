@@ -8,22 +8,22 @@
 
 typedef struct ENTRY_STRUCT {
   struct ENTRY_STRUCT * next;
-  KEY_TYPEDEF   key;
-  VALUE_TYPEDEF value;
-} ENTRY_TYPEDEF;
+  KEY_TYPE   key;
+  OBJECT_TYPE value;
+} ENTRY_TYPE;
 
 /*** type specific functionaility ***/
 
-/* TODO: Implement hash for KEY_TYPEDEF. */
-static unsigned long hash_key(KEY_TYPEDEF key) {
+/* TODO: Implement hash for KEY_TYPE. */
+static unsigned long hash_key(KEY_TYPE key) {
   return (*(unsigned long*)&key);
 }
 
 /* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
  *
  * Alternatively:
- * static int compare_key(KEY_TYPEDEF key0, KEY_TYPEDEF key1) {
- *   return memcmp(&key0, &key1, sizeof(KEY_TYPEDEF)) == 0;
+ * static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
+ *   return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
  * }
  */
 
@@ -31,42 +31,42 @@ static unsigned long hash_key(KEY_TYPEDEF key) {
 
 /* TODO: Cleanup the key, if applicable. This function is called
  * when entries are erased, but not when they are overwritten. */
-static void deinit_key(KEY_TYPEDEF * key) {
+static void deinit_key(KEY_TYPE * key) {
 }
 
 /* TODO: Initialize a value, if applicable. This function is called
  * when entries created or overwritten. */
-static void init_value(VALUE_TYPEDEF * value) {
-  memset(value, 0, sizeof(VALUE_TYPEDEF));
+static void init_value(OBJECT_TYPE * value) {
+  memset(value, 0, sizeof(OBJECT_TYPE));
 }
 
 /* TODO: Cleanup a value, if applicable. This function is called
  * when entries are erased or overwritten. */
-static void deinit_value(VALUE_TYPEDEF * value) {
-  memset(value, 0, sizeof(VALUE_TYPEDEF));
+static void deinit_value(OBJECT_TYPE * value) {
+  memset(value, 0, sizeof(OBJECT_TYPE));
 }
 
 /*** general functionaility ***/
 
 static const unsigned long initial_size = 32;
 
-static unsigned long hash_idx(KEY_TYPEDEF key, unsigned long table_size) {
+static unsigned long hash_idx(KEY_TYPE key, unsigned long table_size) {
   assert(table_size > 0);
 
   return hash_key(key) % table_size;
 }
 
-static ENTRY_TYPEDEF ** bucket_of(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
+static ENTRY_TYPE ** bucket_of(OBJMAP_TYPE * map, KEY_TYPE key) {
   assert(map->table);
 
   return map->table + hash_idx(key, map->table_size);
 }
 
-static int resize_table(OBJMAP_TYPEDEF * map, unsigned long newsize) {
+static int resize_table(OBJMAP_TYPE * map, unsigned long newsize) {
   unsigned long i;
   unsigned long table_size = map->table_size;
-  ENTRY_TYPEDEF ** table = map->table;
-  ENTRY_TYPEDEF ** newtable = calloc(sizeof(*newtable), newsize);
+  ENTRY_TYPE ** table = map->table;
+  ENTRY_TYPE ** newtable = calloc(sizeof(*newtable), newsize);
 
   if(!newtable) {
     return 0;
@@ -74,16 +74,16 @@ static int resize_table(OBJMAP_TYPEDEF * map, unsigned long newsize) {
 
   for(i = 0 ; i < table_size ; i ++) {
     /* free chain */
-    ENTRY_TYPEDEF * entry = table[i];
+    ENTRY_TYPE * entry = table[i];
 
     while(entry) {
       /* save next pointer */
-      ENTRY_TYPEDEF * next = entry->next;
+      ENTRY_TYPE * next = entry->next;
 
       unsigned long idx = hash_idx(entry->key, newsize);
 
       /* lookup chain in the new table */
-      ENTRY_TYPEDEF ** slot = newtable + idx;
+      ENTRY_TYPE ** slot = newtable + idx;
 
       /* advance slot in the new chain */
       while(*slot) {
@@ -107,24 +107,24 @@ static int resize_table(OBJMAP_TYPEDEF * map, unsigned long newsize) {
   return 1;
 }
 
-void OBJMAP_METHOD_INIT(OBJMAP_TYPEDEF * m) {
+void OBJMAP_METHOD_INIT(OBJMAP_TYPE * m) {
   m->table       = NULL;
   m->table_size  = 0;
   m->entry_count = 0;
 }
 
-void OBJMAP_METHOD_CLEAR(OBJMAP_TYPEDEF * map) {
+void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map) {
   unsigned long i;
   unsigned long table_size = map->table_size;
-  ENTRY_TYPEDEF ** table = map->table;
+  ENTRY_TYPE ** table = map->table;
 
   for(i = 0 ; i < table_size ; i ++) {
     /* free chain */
-    ENTRY_TYPEDEF * entry = table[i];
+    ENTRY_TYPE * entry = table[i];
 
     while(entry) {
       /* cache next pointer */
-      ENTRY_TYPEDEF * next = entry->next;
+      ENTRY_TYPE * next = entry->next;
       /* destroy this one */
       deinit_key(&entry->key);
       deinit_value(&entry->value);
@@ -144,8 +144,8 @@ void OBJMAP_METHOD_CLEAR(OBJMAP_TYPEDEF * map) {
   map->table_size = 0;
 }
 
-VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
-  ENTRY_TYPEDEF * list;
+OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key) {
+  ENTRY_TYPE * list;
 
   if(map->table == NULL) { return NULL; }
 
@@ -161,12 +161,12 @@ VALUE_TYPEDEF * OBJMAP_METHOD_FIND(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
   return NULL;
 }
 
-VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
+OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
   assert(map);
 
   if(map->table == NULL) { 
     /* allocate since not allocated already */
-    map->table = calloc(sizeof(ENTRY_TYPEDEF *), initial_size);
+    map->table = calloc(sizeof(ENTRY_TYPE *), initial_size);
 
     /* couldn't alloc, escape before anything breaks */
     if(!map->table) { return NULL; }
@@ -179,11 +179,11 @@ VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
     }
   }
 
-  ENTRY_TYPEDEF ** slot = bucket_of(map, key);
+  ENTRY_TYPE ** slot = bucket_of(map, key);
 
   /* advance last slot */
   while(*slot) {
-    ENTRY_TYPEDEF * entry = *slot;
+    ENTRY_TYPE * entry = *slot;
 
     if(compare_key(entry->key, key)) {
       /* already exists, only deinit value, not key */
@@ -197,7 +197,7 @@ VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
   }
 
   /* reached end of chain, create a new entry */
-  ENTRY_TYPEDEF * new_entry = malloc(sizeof(*new_entry));
+  ENTRY_TYPE * new_entry = malloc(sizeof(*new_entry));
 
   /* couldn't alloc, escape before anything breaks */
   if(!new_entry) { return NULL; }
@@ -215,13 +215,13 @@ VALUE_TYPEDEF * OBJMAP_METHOD_CREATE(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
 }
 
 
-int OBJMAP_METHOD_DESTROY(OBJMAP_TYPEDEF * map, KEY_TYPEDEF key) {
+int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key) {
   if(map->table == NULL) { return 0; }
 
-  ENTRY_TYPEDEF ** slot = bucket_of(map, key);
+  ENTRY_TYPE ** slot = bucket_of(map, key);
 
   while(*slot) {
-    ENTRY_TYPEDEF * entry = *slot;
+    ENTRY_TYPE * entry = *slot;
 
     if(compare_key(entry->key, key)) {
       /* matches, skip over */

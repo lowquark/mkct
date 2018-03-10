@@ -4,16 +4,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-void LIST_METHOD_INIT(LIST_TYPEDEF * l) {
+void LIST_METHOD_INIT(LIST_TYPE * l) {
   l->next = l;
   l->prev = l;
   l->head = l;
 }
 
-void LIST_METHOD_CLEAR(LIST_TYPEDEF * l) {
-  LIST_TYPEDEF * l_iter;
-  LIST_TYPEDEF * l_iter_next;
-  NODE_TYPEDEF * node;
+void LIST_METHOD_CLEAR(LIST_TYPE * l) {
+  LIST_TYPE * l_iter;
+  LIST_TYPE * l_iter_next;
+  NODE_TYPE * node;
 
   l_iter = l->next;
 
@@ -21,7 +21,7 @@ void LIST_METHOD_CLEAR(LIST_TYPEDEF * l) {
     l_iter_next = l_iter->next;
 
     /* no offsetof *should* be necessary */
-    node = (NODE_TYPEDEF *)l_iter;
+    node = (NODE_TYPE *)l_iter;
 
     /* deinit(&node->value) */
     free(node);
@@ -32,7 +32,7 @@ void LIST_METHOD_CLEAR(LIST_TYPEDEF * l) {
   LIST_METHOD_INIT(l);
 }
 
-void LIST_METHOD_ERASE(NODE_TYPEDEF * node) {
+void LIST_METHOD_ERASE(NODE_TYPE * node) {
   node->list.prev->next = node->list.next;
   node->list.next->prev = node->list.prev;
 
@@ -45,8 +45,8 @@ void LIST_METHOD_ERASE(NODE_TYPEDEF * node) {
   free(node);
 }
 
-NODE_TYPEDEF * LIST_METHOD_PUSHBACK(LIST_TYPEDEF * l, VALUE_TYPEDEF value) {
-  NODE_TYPEDEF * newnode = calloc(sizeof(NODE_TYPEDEF), 1);
+NODE_TYPE * LIST_METHOD_PUSHBACK(LIST_TYPE * l, VALUE_TYPE value) {
+  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
 
   if(newnode) {
     newnode->list.next       = l;
@@ -60,8 +60,8 @@ NODE_TYPEDEF * LIST_METHOD_PUSHBACK(LIST_TYPEDEF * l, VALUE_TYPEDEF value) {
   return newnode;
 }
 
-NODE_TYPEDEF * LIST_METHOD_PUSHFRONT(LIST_TYPEDEF * l, VALUE_TYPEDEF value) {
-  NODE_TYPEDEF * newnode = calloc(sizeof(NODE_TYPEDEF), 1);
+NODE_TYPE * LIST_METHOD_PUSHFRONT(LIST_TYPE * l, VALUE_TYPE value) {
+  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
 
   if(newnode) {
     newnode->list.prev       = l;
@@ -75,8 +75,8 @@ NODE_TYPEDEF * LIST_METHOD_PUSHFRONT(LIST_TYPEDEF * l, VALUE_TYPEDEF value) {
   return newnode;
 }
 
-NODE_TYPEDEF * LIST_METHOD_INSERTBEFORE(NODE_TYPEDEF * node, VALUE_TYPEDEF value) {
-  NODE_TYPEDEF * newnode = calloc(sizeof(NODE_TYPEDEF), 1);
+NODE_TYPE * LIST_METHOD_INSERTBEFORE(NODE_TYPE * node, VALUE_TYPE value) {
+  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
 
   if(newnode) {
     newnode->list.next       = &node->list;
@@ -90,8 +90,8 @@ NODE_TYPEDEF * LIST_METHOD_INSERTBEFORE(NODE_TYPEDEF * node, VALUE_TYPEDEF value
   return newnode;
 }
 
-NODE_TYPEDEF * LIST_METHOD_INSERTAFTER(NODE_TYPEDEF * node, VALUE_TYPEDEF value) {
-  NODE_TYPEDEF * newnode = calloc(sizeof(NODE_TYPEDEF), 1);
+NODE_TYPE * LIST_METHOD_INSERTAFTER(NODE_TYPE * node, VALUE_TYPE value) {
+  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
 
   if(newnode) {
     newnode->list.prev       = &node->list;
@@ -105,23 +105,23 @@ NODE_TYPEDEF * LIST_METHOD_INSERTAFTER(NODE_TYPEDEF * node, VALUE_TYPEDEF value)
   return newnode;
 }
 
-NODE_TYPEDEF * LIST_METHOD_FIRST(const LIST_TYPEDEF * l) {
+NODE_TYPE * LIST_METHOD_FIRST(const LIST_TYPE * l) {
   if(l->next == l) { return 0; }
-  return (NODE_TYPEDEF *)l->next;
+  return (NODE_TYPE *)l->next;
 }
 
-NODE_TYPEDEF * LIST_METHOD_LAST(const LIST_TYPEDEF * l) {
+NODE_TYPE * LIST_METHOD_LAST(const LIST_TYPE * l) {
   if(l->prev == l) { return 0; }
-  return (NODE_TYPEDEF *)l->prev;
+  return (NODE_TYPE *)l->prev;
 }
 
-NODE_TYPEDEF * LIST_METHOD_NEXT(const NODE_TYPEDEF * l) {
+NODE_TYPE * LIST_METHOD_NEXT(const NODE_TYPE * l) {
   if(l->list.next == l->list.head) { return 0; }
-  return (NODE_TYPEDEF *)l->list.next;
+  return (NODE_TYPE *)l->list.next;
 }
 
-NODE_TYPEDEF * LIST_METHOD_PREV(const NODE_TYPEDEF * l) {
+NODE_TYPE * LIST_METHOD_PREV(const NODE_TYPE * l) {
   if(l->list.prev == l->list.head) { return 0; }
-  return (NODE_TYPEDEF *)l->list.prev;
+  return (NODE_TYPE *)l->list.prev;
 }
 
