@@ -54,10 +54,13 @@ imap_obj_src:
 	patch -d src/objmap/ < src/objmap/imap_obj.h.patch
 
 src/llist/ilist.o: ilist_src
+src/llist/llist_check.o: ilist_src
 
 src/queue/iqueue.o: iqueue_src
+src/queue/queue_check.o: iqueue_src
 
 src/map/iimap.o: iimap_src
+src/map/map_check.o: iimap_src
 
 src/objmap/imap_obj.o: imap_obj_src
 src/objmap/objmap_check.o: imap_obj_src
