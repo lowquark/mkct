@@ -4,6 +4,41 @@
 A collection of bash scripts that generate a container for one of your types --
 like a C++ template but without the C++.
 
+## `mkct.llist`
+
+Generates a circular linked list for some value type.
+
+    $ mkct.llist --name=ilist --value-type=int
+
+`ilist.h` and `ilist.c` will be created. See `ilist.h` for usage.
+
+## `mkct.queue`
+
+Generates a queue for some value type.
+
+    $ mkct.queue --name=iqueue --value-type=int
+
+`iqueue.h` and `iqueue.c` will be created. See `iqueue.h` for usage.
+
+## `mkct.map`
+
+Generates a key-value mapping for some key type and some value type.
+
+    $ mkct.map --name=iimap --key-type=int --value-type=int
+
+`iimap.h` and `iimap.c` will be created. See `iimap.h` for usage. It's up to
+you to implement the hash function in `iimap.c`.
+
+## `mkct.objmap`
+
+Like `mkct.map`, but "owns" the objects that it contains. Calls an init and
+deinit on its values, and returns a NULL pointer for non-existent objects.
+
+    $ mkct.map --name=iobjmap --key-type=int --value-type=my_object_t
+
+`iobjmap.h` and `iobjmap.c` will be created. See `iobjmap.h` for usage. It's up to
+you to implement the init, deinit, and hash function in `iobjmap.c`.
+
 ## Why?
 
 Because I'm tired of boilerplate like this:
