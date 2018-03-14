@@ -1,5 +1,5 @@
-#ifndef STACK_H
-#define STACK_H
+#ifndef _INT_STACK_H_
+#define _INT_STACK_H_
 
 typedef unsigned long int_stack_size_t;
 
@@ -9,7 +9,6 @@ typedef struct int_stack {
   int * putptr;
   int_stack_size_t size;
 } int_stack_t;
-
 
 void int_stack_init(int_stack_t * stack);
 void int_stack_clear(int_stack_t * stack);

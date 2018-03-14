@@ -23,7 +23,6 @@ void LIST_METHOD_CLEAR(LIST_TYPE * l) {
     /* no offsetof *should* be necessary */
     node = (NODE_TYPE *)l_iter;
 
-    /* deinit(&node->value) */
     free(node);
 
     l_iter = l_iter_next;
@@ -39,8 +38,6 @@ void LIST_METHOD_ERASE(NODE_TYPE * node) {
   node->list.next = &node->list;
   node->list.prev = &node->list;
   node->list.head = &node->list;
-
-  /* deinit(&node->value) */
 
   free(node);
 }

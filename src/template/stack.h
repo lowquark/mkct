@@ -1,5 +1,5 @@
-#ifndef STACK_H
-#define STACK_H
+#ifndef INCLUDE_GUARD
+#define INCLUDE_GUARD
 
 typedef unsigned long SIZE_TYPE;
 
@@ -9,7 +9,6 @@ typedef struct STACK_STRUCT {
   VALUE_TYPE * putptr;
   SIZE_TYPE size;
 } STACK_TYPE;
-
 
 void STACK_METHOD_INIT(STACK_TYPE * stack);
 void STACK_METHOD_CLEAR(STACK_TYPE * stack);

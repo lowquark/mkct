@@ -156,14 +156,9 @@ read -r -d '' OUTPUT << "EOF"
 #include <assert.h>
 
 
-typedef struct ENTRY_STRUCT {
-  struct ENTRY_STRUCT * next;
-  KEY_TYPE   key;
-  VALUE_TYPE value;
-} ENTRY_TYPE;
-
-
+/************************************/
 /*** type specific functionaility ***/
+/************************************/
 
 
 /* TODO: Implement hash for KEY_TYPE. */
@@ -174,24 +169,24 @@ static unsigned long hash_key(KEY_TYPE key) {
 /* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
  *
  * Alternatively:
- * #define compare_key(key0, key1) ((key0) == (key1))
- */
 static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
   return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
 }
+ */
 
-/* TODO: Cleanup the key and value, if applicable. This function is called
- * when entries are erased, but not when they are overwritten. */
-static void deinit_key(KEY_TYPE key) {
-}
-
-/* TODO: Cleanup the key and value, if applicable. This function is called
- * when entries are erased or overwritten. */
-static void deinit_value(VALUE_TYPE value) {
-}
+#define compare_key(key0, key1) ((key0) == (key1))
 
 
+/******************************/
 /*** general functionaility ***/
+/******************************/
+
+
+typedef struct ENTRY_STRUCT {
+  struct ENTRY_STRUCT * next;
+  KEY_TYPE   key;
+  VALUE_TYPE value;
+} ENTRY_TYPE;
 
 
 static const unsigned long initial_size = 32;
@@ -272,8 +267,6 @@ void MAP_METHOD_CLEAR(MAP_TYPE * map) {
       /* cache next pointer */
       ENTRY_TYPE * next = entry->next;
       /* destroy this one */
-      deinit_key(entry->key);
-      deinit_value(entry->value);
       free(entry);
       /* try again with the next */
       entry = next;
@@ -334,10 +327,6 @@ int MAP_METHOD_SET(MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value) {
 
     if(compare_key(entry->key, key)) {
       /* already exists, overwrite */
-
-      /* only deinit value, not key */
-      deinit_value(entry->value);
-      /* set new value */
       entry->value = value;
 
       /* successfully set */
@@ -395,8 +384,6 @@ int MAP_METHOD_ERASE(MAP_TYPE * map, KEY_TYPE key) {
       *slot = entry->next;
 
       /* free */
-      deinit_key(entry->key);
-      deinit_value(entry->value);
       free(entry);
 
       /* one less entry total */

@@ -22,7 +22,6 @@ void obj_list_clear(obj_list_t * l) {
     /* no offsetof *should* be necessary */
     node = (obj_list_node_t *)l_iter;
 
-    /* deinit(&node->value) */
     free(node);
 
     l_iter = l_iter_next;
@@ -38,8 +37,6 @@ void obj_list_erase(obj_list_node_t * node) {
   node->list.next = &node->list;
   node->list.prev = &node->list;
   node->list.head = &node->list;
-
-  /* deinit(&node->value) */
 
   free(node);
 }

@@ -6,13 +6,6 @@
 
 #define INITIAL_SIZE 32
 
-
-static void deinit_value(int value) {
-  /* TODO: Cleanup the int, if applicable. This function is called
-   * when values are popped from the queue, and when the queue is cleared. */
-}
-
-
 void int_queue_init(int_queue_t * q) {
   q->buffer_begin = NULL;
   q->buffer_end = NULL;
@@ -22,23 +15,8 @@ void int_queue_init(int_queue_t * q) {
 }
 
 void int_queue_clear(int_queue_t * q) {
-  int * valptr;
-
+  /* free the buffer (may be NULL) */
   free(q->buffer_begin);
-
-  /* iterate over [getptr, putptr), call deinit */
-  if(q->size) {
-    do {
-      valptr = q->getptr;
-
-      deinit_value(*valptr);
-
-      valptr ++;
-      if(valptr == q->buffer_end) {
-        valptr = q->buffer_begin;
-      }
-    } while(valptr != q->putptr);
-  }
 
   /* clean slate */
   int_queue_init(q);
@@ -69,7 +47,7 @@ int int_queue_push(int_queue_t * q, int value) {
     new_buffer_size = 2*q->size;
 
     /* alloc new buffer twice as large */
-    new_buffer_begin = malloc(new_buffer_size*sizeof(int ));
+    new_buffer_begin = malloc(new_buffer_size*sizeof(int));
 
     /* couldn't alloc, escape before anything breaks */
     if(!new_buffer_begin) { return 0; }
@@ -109,8 +87,6 @@ int int_queue_push(int_queue_t * q, int value) {
 
 int int_queue_pop(int_queue_t * q) {
   if(q->size == 0) { return 0; }
-
-  deinit_value(*q->getptr);
 
   q->getptr++;
 

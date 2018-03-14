@@ -7,13 +7,6 @@
 
 #define INITIAL_SIZE 32
 
-
-static void deinit_value(VALUE_TYPE value) {
-  /* TODO: Cleanup the VALUE_TYPE, if applicable. This function is called
-   * when values are popped from the queue, and when the queue is cleared. */
-}
-
-
 void QUEUE_METHOD_INIT(QUEUE_TYPE * q) {
   q->buffer_begin = NULL;
   q->buffer_end = NULL;
@@ -23,23 +16,8 @@ void QUEUE_METHOD_INIT(QUEUE_TYPE * q) {
 }
 
 void QUEUE_METHOD_CLEAR(QUEUE_TYPE * q) {
-  VALUE_TYPE * valptr;
-
+  /* free the buffer (may be NULL) */
   free(q->buffer_begin);
-
-  /* iterate over [getptr, putptr), call deinit */
-  if(q->size) {
-    do {
-      valptr = q->getptr;
-
-      deinit_value(*valptr);
-
-      valptr ++;
-      if(valptr == q->buffer_end) {
-        valptr = q->buffer_begin;
-      }
-    } while(valptr != q->putptr);
-  }
 
   /* clean slate */
   QUEUE_METHOD_INIT(q);
@@ -70,7 +48,7 @@ int QUEUE_METHOD_PUSH(QUEUE_TYPE * q, VALUE_TYPE value) {
     new_buffer_size = 2*q->size;
 
     /* alloc new buffer twice as large */
-    new_buffer_begin = malloc(new_buffer_size*sizeof(VALUE_TYPE ));
+    new_buffer_begin = malloc(new_buffer_size*sizeof(VALUE_TYPE));
 
     /* couldn't alloc, escape before anything breaks */
     if(!new_buffer_begin) { return 0; }
@@ -110,8 +88,6 @@ int QUEUE_METHOD_PUSH(QUEUE_TYPE * q, VALUE_TYPE value) {
 
 int QUEUE_METHOD_POP(QUEUE_TYPE * q) {
   if(q->size == 0) { return 0; }
-
-  deinit_value(*q->getptr);
 
   q->getptr++;
 

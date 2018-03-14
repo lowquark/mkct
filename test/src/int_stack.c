@@ -6,7 +6,6 @@
 
 #define INITIAL_SIZE 32
 
-
 void int_stack_init(int_stack_t * stack) {
   stack->buffer_begin = NULL;
   stack->buffer_end   = NULL;
