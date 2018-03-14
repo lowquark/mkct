@@ -1,13 +1,13 @@
 
-#include "iqueue.h"
+#include "int_queue.h"
 
 #include <check.h>
 #include <stdlib.h>
 
 START_TEST(init) {
-  iqueue_t queue;
+  int_queue_t queue;
 
-  iqueue_init(&queue);
+  int_queue_init(&queue);
 
   ck_assert_ptr_null(queue.buffer_begin);
   ck_assert_ptr_null(queue.buffer_end);
@@ -15,7 +15,7 @@ START_TEST(init) {
   ck_assert_ptr_null(queue.putptr);
   ck_assert_int_eq(queue.size, 0);
 
-  iqueue_clear(&queue);
+  int_queue_clear(&queue);
 
   ck_assert_ptr_null(queue.buffer_begin);
   ck_assert_ptr_null(queue.buffer_end);
@@ -26,29 +26,29 @@ START_TEST(init) {
 END_TEST
 
 START_TEST(push_pop) {
-  iqueue_t queue;
+  int_queue_t queue;
 
-  iqueue_init(&queue);
+  int_queue_init(&queue);
 
   for(int k = 0 ; k < 100 ; k ++) {
     int N = rand() % 200;
 
     for(int i = 0 ; i < N ; i ++) {
-      iqueue_push(&queue, i);
+      int_queue_push(&queue, i);
     }
 
     for(int i = 0 ; i < N ; i ++) {
       int value;
-      ck_assert_int_eq(iqueue_peek(&queue, &value), 1);
+      ck_assert_int_eq(int_queue_peek(&queue, &value), 1);
       ck_assert_int_eq(value, i);
-      ck_assert_int_eq(iqueue_pop(&queue), 1);
+      ck_assert_int_eq(int_queue_pop(&queue), 1);
     }
 
-    ck_assert_int_eq(iqueue_pop(&queue), 0);
+    ck_assert_int_eq(int_queue_pop(&queue), 0);
     ck_assert_int_eq(queue.size, 0);
   }
 
-  iqueue_clear(&queue);
+  int_queue_clear(&queue);
 }
 END_TEST
 

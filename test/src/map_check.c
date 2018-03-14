@@ -1,11 +1,11 @@
 
-#include "iimap.h"
+#include "int_int_map.h"
 
 #include <check.h>
 #include <stdlib.h>
 #include <time.h>
 
-static void erase_randomly_cycle(iimap_t * map) {
+static void erase_randomly_cycle(int_int_map_t * map) {
   struct test_entry_t {
     int salt;
     int key;
@@ -21,7 +21,7 @@ static void erase_randomly_cycle(iimap_t * map) {
     // note: impossible to have duplicates, but still very sparse
     int key = (int)(100 * i + (rand() % 100));
 
-    iimap_set(map, key, salt);
+    int_int_map_set(map, key, salt);
 
     tests[i].salt = salt;
     tests[i].key = key;
@@ -33,7 +33,7 @@ static void erase_randomly_cycle(iimap_t * map) {
     int key = tests[i].key;
     int value;
 
-    ck_assert_int_eq(iimap_get(map, key, &value), 1);
+    ck_assert_int_eq(int_int_map_get(map, key, &value), 1);
 
     ck_assert_int_eq(value, tests[i].salt);
   }
@@ -43,7 +43,7 @@ static void erase_randomly_cycle(iimap_t * map) {
     int key = tests[i].key;
 
     if((rand() % 10) == 0) {
-      iimap_erase(map, key);
+      int_int_map_erase(map, key);
       tests[i].set = 0;
     }
   }
@@ -54,7 +54,7 @@ static void erase_randomly_cycle(iimap_t * map) {
     int key = tests[i].key;
     int value;
 
-    if(iimap_get(map, key, &value)) {
+    if(int_int_map_get(map, key, &value)) {
       ck_assert_int_eq(tests[i].set, 1);
       ck_assert_int_eq(tests[i].salt, value);
     } else {
@@ -67,7 +67,7 @@ static void erase_randomly_cycle(iimap_t * map) {
     if(tests[i].set) {
       int key = tests[i].key;
 
-      iimap_erase(map, key);
+      int_int_map_erase(map, key);
 
       tests[i].set = 0;
     }
@@ -78,22 +78,22 @@ static void erase_randomly_cycle(iimap_t * map) {
     int key = tests[i].key;
     int value;
 
-    ck_assert_int_eq(iimap_get(map, key, &value), 0);
+    ck_assert_int_eq(int_int_map_get(map, key, &value), 0);
   }
 }
 
 START_TEST(erase_randomly) {
   srand((unsigned int)time(NULL));
 
-  iimap_t map;
+  int_int_map_t map;
 
-  iimap_init(&map);
+  int_int_map_init(&map);
 
   for(int i = 0 ; i < 100 ; i ++) {
     erase_randomly_cycle(&map);
   }
 
-  iimap_clear(&map);
+  int_int_map_clear(&map);
 }
 END_TEST
 

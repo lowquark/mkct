@@ -2,7 +2,7 @@
 
 set -u
 
-NAME=queue
+NAME=list
 VALUE_TYPE=int
 H_FILE=
 C_FILE=
@@ -13,11 +13,11 @@ function print() {
 }
 
 function print_usage() {
-  print "Usage: mkct.queue [OPTIONS]...                                       "
-  print "Generate a dynamically-sized queue implementation with the given type"
+  print "Usage: mkct.list [OPTIONS]...                                        "
+  print "Generate a circular, linked list implementation with the given type  "
   print "                                                                     "
-  print "  --name=[NAME]            Set queue name/prefix                     "
-  print "  --value-type=[TYPE]      Set type of values contained in the queue "
+  print "  --name=[NAME]            Set list name/prefix                      "
+  print "  --value-type=[TYPE]      Set type of values contained in the list  "
   print "                                                                     "
   print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
   print "                             Defaults to [NAME].h                    "
@@ -73,17 +73,17 @@ if [ -z $C_FILE ]; then C_FILE="$NAME.c"; fi
 case "$OUTPUT_TYPE" in
   overview)
 read -r -d '' OUTPUT << "EOF"
-{{queue.overview.h}}
+{{list.overview.h}}
 EOF
     ;;
   header)
 read -r -d '' OUTPUT << "EOF"
-{{queue.h}}
+{{list.h}}
 EOF
     ;;
   source)
 read -r -d '' OUTPUT << "EOF"
-{{queue.c}}
+{{list.c}}
 EOF
     ;;
   *)
@@ -98,16 +98,21 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
 s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/QUEUE_STRUCT/${NAME}/g;\
-s/QUEUE_TYPE/${NAME}_t/g;\
-s/SIZE_TYPE/${NAME}_size_t/g;\
-s/QUEUE_METHOD_INIT/${NAME}_init/g;\
-s/QUEUE_METHOD_CLEAR/${NAME}_clear/g;\
-s/QUEUE_METHOD_PUSH/${NAME}_push/g;\
-s/QUEUE_METHOD_POP/${NAME}_pop/g;\
-s/QUEUE_METHOD_PEEK/${NAME}_peek/g;\
-s/QUEUE_METHOD_AT/${NAME}_at/g;\
-s/QUEUE_METHOD_SIZE/${NAME}_size/g;\
+s/LIST_STRUCT/${NAME}/g;\
+s/LIST_TYPE/${NAME}_t/g;\
+s/NODE_STRUCT/${NAME}_node/g;\
+s/NODE_TYPE/${NAME}_node_t/g;\
+s/LIST_METHOD_INIT/${NAME}_init/g;\
+s/LIST_METHOD_CLEAR/${NAME}_clear/g;\
+s/LIST_METHOD_ERASE/${NAME}_erase/g;\
+s/LIST_METHOD_PUSHBACK/${NAME}_pushback/g;\
+s/LIST_METHOD_PUSHFRONT/${NAME}_pushfront/g;\
+s/LIST_METHOD_INSERTBEFORE/${NAME}_insertbefore/g;\
+s/LIST_METHOD_INSERTAFTER/${NAME}_insertafter/g;\
+s/LIST_METHOD_FIRST/${NAME}_first/g;\
+s/LIST_METHOD_LAST/${NAME}_last/g;\
+s/LIST_METHOD_NEXT/${NAME}_next/g;\
+s/LIST_METHOD_PREV/${NAME}_prev/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 
