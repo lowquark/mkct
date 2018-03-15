@@ -4,40 +4,53 @@
 A collection of bash scripts that generate a container for one of your types --
 like a C++ template but without the C++.
 
-## `mkct.llist`
-
-Generates a circular linked list for some value type.
-
-    $ mkct.llist --name=ilist --value-type=int
-
-`ilist.h` and `ilist.c` will be created. See `ilist.h` for usage.
 
 ## `mkct.queue`
 
-Generates a queue for some value type.
+Generates a queue (FIFO) for a given value type.
 
-    $ mkct.queue --name=iqueue --value-type=int
+## `mkct.objqueue`
 
-`iqueue.h` and `iqueue.c` will be created. See `iqueue.h` for usage.
+Generates a queue (FIFO) of managed objects for a given object type. Manages
+allocation and initialization of objects.
+
+## `mkct.stack`
+
+Generates a stack (FILO) for a given value type.
+
+## `mkct.objstack`
+
+Generates a stack (FILO) of managed objects for a given object type. Manages
+allocation and initialization of objects.
+
+## `mkct.list`
+
+Generates a circular linked list for a given value type.
+
+## `mkct.objlist`
+
+Generates a circular linked list for a given object type. Manages allocation
+and initialization of objects.
 
 ## `mkct.map`
 
-Generates a key-value mapping for some key type and some value type.
-
-    $ mkct.map --name=iimap --key-type=int --value-type=int
-
-`iimap.h` and `iimap.c` will be created. See `iimap.h` for usage. It's up to
-you to implement the hash function in `iimap.c`.
+Generates a hash map for given key / value types.
 
 ## `mkct.objmap`
 
-Like `mkct.map`, but "owns" the objects that it contains. Calls an init and
-deinit on its values, and returns a NULL pointer for non-existent objects.
+Generates a hash map for given key / object types. Manages allocation and
+initialization of objects, but not keys.
 
-    $ mkct.map --name=iobjmap --key-type=int --object-type=my_object_t
 
-`iobjmap.h` and `iobjmap.c` will be created. See `iobjmap.h` for usage. It's up to
-you to implement the init, deinit, and hash function in `iobjmap.c`.
+## Example:
+
+    The following commands will create a simple queue of type `double`:
+
+    $ mkct.queue --header --name=iqueue --value-type=double > dqueue.h
+    $ mkct.queue --source --name=iqueue --value-type=double > dqueue.c
+
+`dqueue.h` and `dqueue.c` will be created. See `dqueue.h` for usage.
+
 
 ## Why?
 
