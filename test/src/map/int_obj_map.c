@@ -5,11 +5,13 @@
 #include <string.h>
 #include <assert.h>
 
+typedef struct int_obj_map_entry {
+  struct int_obj_map_entry * next;
+  int   key;
+  obj_t object;
+} int_obj_map_entry_t;
 
-/************************************/
 /*** type specific functionaility ***/
-/************************************/
-
 
 /* TODO: Implement hash for int. */
 static unsigned long hash_key(int key) {
@@ -19,25 +21,31 @@ static unsigned long hash_key(int key) {
 /* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
  *
  * Alternatively:
-static int compare_key(int key0, int key1) {
-  return memcmp(&key0, &key1, sizeof(int)) == 0;
-}
+ * static int compare_key(int key0, int key1) {
+ *   return memcmp(&key0, &key1, sizeof(int)) == 0;
+ * }
  */
 
 #define compare_key(key0, key1) ((key0) == (key1))
 
+/* TODO: Cleanup the key, if applicable. This function is called
+ * when entries are erased, but not when they are overwritten. */
+static void deinit_key(int * key) {
+}
 
-/******************************/
+/* TODO: Initialize a object, if applicable. This function is called
+ * when entries created or overwritten. */
+static void init_object(obj_t * object) {
+  obj_init(object);
+}
+
+/* TODO: Cleanup a object, if applicable. This function is called
+ * when entries are erased or overwritten. */
+static void deinit_object(obj_t * object) {
+  obj_clear(object);
+}
+
 /*** general functionaility ***/
-/******************************/
-
-
-typedef struct int_obj_map_entry {
-  struct int_obj_map_entry * next;
-  int   key;
-  int value;
-} int_obj_map_entry_t;
-
 
 static const unsigned long initial_size = 32;
 
@@ -117,6 +125,8 @@ void int_obj_map_clear(int_obj_map_t * map) {
       /* cache next pointer */
       int_obj_map_entry_t * next = entry->next;
       /* destroy this one */
+      deinit_key(&entry->key);
+      deinit_object(&entry->object);
       free(entry);
       /* try again with the next */
       entry = next;
@@ -133,25 +143,24 @@ void int_obj_map_clear(int_obj_map_t * map) {
   map->table_size = 0;
 }
 
-int int_obj_map_get(int_obj_map_t * map, int key, int * value_out) {
+obj_t * int_obj_map_find(int_obj_map_t * map, int key) {
   int_obj_map_entry_t * list;
 
-  if(map->table == NULL) { return 0; }
+  if(map->table == NULL) { return NULL; }
 
   list = *bucket_of(map, key);
 
   while(list) {
     if(compare_key(list->key, key)) {
-      *value_out = list->value;
-      return 1;
+      return &list->object;
     }
     list = list->next;
   }
 
-  return 0;
+  return NULL;
 }
 
-int int_obj_map_set(int_obj_map_t * map, int key, int value) {
+obj_t * int_obj_map_create(int_obj_map_t * map, int key) {
   assert(map);
 
   if(map->table == NULL) { 
@@ -159,13 +168,13 @@ int int_obj_map_set(int_obj_map_t * map, int key, int value) {
     map->table = calloc(sizeof(int_obj_map_entry_t *), initial_size);
 
     /* couldn't alloc, escape before anything breaks */
-    if(!map->table) { return 0; }
+    if(!map->table) { return NULL; }
 
     map->table_size = initial_size;
   } else if(map->entry_count > map->table_size*2) {
     if(!resize_table(map, map->table_size * 2)) {
       /* couldn't resize, escape before anything breaks */
-      return 0;
+      return NULL;
     }
   }
 
@@ -176,11 +185,11 @@ int int_obj_map_set(int_obj_map_t * map, int key, int value) {
     int_obj_map_entry_t * entry = *slot;
 
     if(compare_key(entry->key, key)) {
-      /* already exists, overwrite */
-      entry->value = value;
-
-      /* successfully set */
-      return 1;
+      /* already exists, only deinit object, not key */
+      deinit_object(&entry->object);
+      init_object(&entry->object);
+      /* good as new */
+      return &entry->object;
     }
 
     slot = &(*slot)->next;
@@ -190,38 +199,22 @@ int int_obj_map_set(int_obj_map_t * map, int key, int value) {
   int_obj_map_entry_t * new_entry = malloc(sizeof(*new_entry));
 
   /* couldn't alloc, escape before anything breaks */
-  if(!new_entry) { return 0; }
+  if(!new_entry) { return NULL; }
 
   new_entry->next = NULL;
   new_entry->key = key;
-  new_entry->value = value;
   *slot = new_entry;
+
+  /* initialize object */
+  init_object(&new_entry->object);
 
   map->entry_count ++;
 
-  /* successfully set */
-  return 1;
+  return &new_entry->object;
 }
 
 
-int int_obj_map_has(int_obj_map_t * map, int key) {
-  int_obj_map_entry_t * list;
-
-  if(map->table == NULL) { return 0; }
-
-  list = *bucket_of(map, key);
-
-  while(list) {
-    if(compare_key(list->key, key)) {
-      return 1;
-    }
-    list = list->next;
-  }
-
-  return 0;
-}
-
-int int_obj_map_erase(int_obj_map_t * map, int key) {
+int int_obj_map_destroy(int_obj_map_t * map, int key) {
   if(map->table == NULL) { return 0; }
 
   int_obj_map_entry_t ** slot = bucket_of(map, key);
@@ -234,6 +227,8 @@ int int_obj_map_erase(int_obj_map_t * map, int key) {
       *slot = entry->next;
 
       /* free */
+      deinit_key(&entry->key);
+      deinit_object(&entry->object);
       free(entry);
 
       /* one less entry total */
@@ -245,5 +240,6 @@ int int_obj_map_erase(int_obj_map_t * map, int key) {
     slot = &entry->next;
   }
 
+  /* nothing was destroyed */
   return 0;
 }

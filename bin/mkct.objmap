@@ -2,9 +2,9 @@
 
 set -u
 
-NAME=map
+NAME=objmap
 KEY_TYPE=int
-VALUE_TYPE=int
+OBJECT_TYPE=int
 H_FILE=
 C_FILE=
 OUTPUT_TYPE='overview'
@@ -14,12 +14,12 @@ function print() {
 }
 
 function print_usage() {
-  print "Usage: mkct.map [OPTIONS]...                                         "
-  print "Generate a key/value map implementation with the given types         "
+  print "Usage: mkct.objmap [OPTIONS]...                                      "
+  print "Generate a key/object map implementation with the given types        "
   print "                                                                     "
   print "  --name=[NAME]            Set list name/prefix                      "
   print "  --key-type=[TYPE]        Set type of keys indexed by the map       "
-  print "  --value-type=[TYPE]      Set type of values contained in the map   "
+  print "  --object-type=[TYPE]     Set type of objects contained in the map  "
   print "                                                                     "
   print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
   print "                             Defaults to [NAME].h                    "
@@ -51,12 +51,12 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --name=*)       NAME="${1#*=}";       shift 1 ;;
     --key-type=*)   KEY_TYPE="${1#*=}";   shift 1 ;;
-    --value-type=*) VALUE_TYPE="${1#*=}"; shift 1 ;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1 ;;
 
     --header-file=*) H_FILE="${1#*=}"; shift 1 ;;
     --source-file=*) C_FILE="${1#*=}"; shift 1 ;;
 
-    --name|--key-type|--value-type|--header-file|--source-file)
+    --name|--key-type|--object-type|--header-file|--source-file)
       fail_badusage "$1 requires an argument" ;;
 
     --overview) OUTPUT_TYPE='overview'; shift 1 ;;
@@ -77,39 +77,6 @@ case "$OUTPUT_TYPE" in
   overview)
 read -r -d '' OUTPUT << "EOF"
 
-h_file           : H_FILE
-
-c_file           : C_FILE
-
-include_guard    : INCLUDE_GUARD
-
-key_type         : KEY_TYPE
-
-value_type       : VALUE_TYPE
-
-map_struct       : MAP_STRUCT
-
-map_type         : MAP_TYPE
-
-entry_struct     : ENTRY_STRUCT
-
-entry_type       : ENTRY_TYPE
-
-map_method_init  : MAP_METHOD_INIT
-
-map_method_clear : MAP_METHOD_CLEAR
-
-map_method_get   : MAP_METHOD_GET
-
-map_method_set   : MAP_METHOD_SET
-
-map_method_erase : MAP_METHOD_ERASE
-
-map_method_has   : MAP_METHOD_HAS
-
-map_method_size  : MAP_METHOD_SIZE
-
-
 EOF
     ;;
   header)
@@ -117,29 +84,57 @@ read -r -d '' OUTPUT << "EOF"
 #ifndef INCLUDE_GUARD
 #define INCLUDE_GUARD
 
-
 struct ENTRY_STRUCT;
 
-typedef struct MAP_STRUCT {
+/*
+ * Hash map from `KEY_TYPE` keys to `OBJECT_TYPE` objects. Manages
+ * initialization and allocation of the objects, and stores shallow copies of
+ * their keys.
+ */
+typedef struct OBJMAP_STRUCT {
   struct ENTRY_STRUCT ** table;
   unsigned long table_size;
   unsigned long entry_count;
-} MAP_TYPE;
+} OBJMAP_TYPE;
 
+/* Initializes the given `OBJMAP_TYPE` to a valid, empty state.
+ *
+ * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to destroy all
+ * objects in the map.
+ */
+void OBJMAP_METHOD_INIT(OBJMAP_TYPE * map);
 
-void MAP_METHOD_INIT  (MAP_TYPE * map);
+/*
+ * Destroys all objects in the map, and frees all allocated memory it owns.
+ */
+void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map);
 
-void MAP_METHOD_CLEAR (MAP_TYPE * map);
+/* Looks up the object using a given key.
+ *
+ * Returns a pointer to the found object. Returns NULL if no object has key
+ * `key`.
+ */
+OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key);
 
+/* Creates a new object for the given key.
+ *
+ * If an entry is already at `key`, the old entry is destroyed and the new one
+ * is put in its place.
+ *
+ * Returns a pointer to the new entry.
+ */
+OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key);
 
-int  MAP_METHOD_GET   (MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE * value_out);
+/* Finds and destroys the object with the given key.
+ *
+ * Returns 1 if the object was found (and destroyed) and 0 otherwise.
+ */
+int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key);
 
-int  MAP_METHOD_SET   (MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value);
-
-
-int  MAP_METHOD_HAS   (MAP_TYPE * map, KEY_TYPE key);
-
-int  MAP_METHOD_ERASE (MAP_TYPE * map, KEY_TYPE key);
+/*
+ * Returns the number of elements in the map
+ */
+#define OBJMAP_METHOD_SIZE(_map_) (((const MAP_TYPE *)_map_)->entry_count)
 
 #endif
 
@@ -155,11 +150,13 @@ read -r -d '' OUTPUT << "EOF"
 #include <string.h>
 #include <assert.h>
 
+typedef struct ENTRY_STRUCT {
+  struct ENTRY_STRUCT * next;
+  KEY_TYPE   key;
+  OBJECT_TYPE object;
+} ENTRY_TYPE;
 
-/************************************/
 /*** type specific functionaility ***/
-/************************************/
-
 
 /* TODO: Implement hash for KEY_TYPE. */
 static unsigned long hash_key(KEY_TYPE key) {
@@ -169,25 +166,31 @@ static unsigned long hash_key(KEY_TYPE key) {
 /* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
  *
  * Alternatively:
-static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
-  return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
-}
+ * static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
+ *   return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
+ * }
  */
 
 #define compare_key(key0, key1) ((key0) == (key1))
 
+/* TODO: Cleanup the key, if applicable. This function is called
+ * when entries are erased, but not when they are overwritten. */
+static void deinit_key(KEY_TYPE * key) {
+}
 
-/******************************/
+/* TODO: Initialize a object, if applicable. This function is called
+ * when entries created or overwritten. */
+static void init_object(OBJECT_TYPE * object) {
+  memset(object, 0, sizeof(OBJECT_TYPE));
+}
+
+/* TODO: Cleanup a object, if applicable. This function is called
+ * when entries are erased or overwritten. */
+static void deinit_object(OBJECT_TYPE * object) {
+  memset(object, 0, sizeof(OBJECT_TYPE));
+}
+
 /*** general functionaility ***/
-/******************************/
-
-
-typedef struct ENTRY_STRUCT {
-  struct ENTRY_STRUCT * next;
-  KEY_TYPE   key;
-  VALUE_TYPE value;
-} ENTRY_TYPE;
-
 
 static const unsigned long initial_size = 32;
 
@@ -197,13 +200,13 @@ static unsigned long hash_idx(KEY_TYPE key, unsigned long table_size) {
   return hash_key(key) % table_size;
 }
 
-static ENTRY_TYPE ** bucket_of(MAP_TYPE * map, KEY_TYPE key) {
+static ENTRY_TYPE ** bucket_of(OBJMAP_TYPE * map, KEY_TYPE key) {
   assert(map->table);
 
   return map->table + hash_idx(key, map->table_size);
 }
 
-static int resize_table(MAP_TYPE * map, unsigned long newsize) {
+static int resize_table(OBJMAP_TYPE * map, unsigned long newsize) {
   unsigned long i;
   unsigned long table_size = map->table_size;
   ENTRY_TYPE ** table = map->table;
@@ -248,13 +251,13 @@ static int resize_table(MAP_TYPE * map, unsigned long newsize) {
   return 1;
 }
 
-void MAP_METHOD_INIT(MAP_TYPE * m) {
+void OBJMAP_METHOD_INIT(OBJMAP_TYPE * m) {
   m->table       = NULL;
   m->table_size  = 0;
   m->entry_count = 0;
 }
 
-void MAP_METHOD_CLEAR(MAP_TYPE * map) {
+void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map) {
   unsigned long i;
   unsigned long table_size = map->table_size;
   ENTRY_TYPE ** table = map->table;
@@ -267,6 +270,8 @@ void MAP_METHOD_CLEAR(MAP_TYPE * map) {
       /* cache next pointer */
       ENTRY_TYPE * next = entry->next;
       /* destroy this one */
+      deinit_key(&entry->key);
+      deinit_object(&entry->object);
       free(entry);
       /* try again with the next */
       entry = next;
@@ -283,25 +288,24 @@ void MAP_METHOD_CLEAR(MAP_TYPE * map) {
   map->table_size = 0;
 }
 
-int MAP_METHOD_GET(MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE * value_out) {
+OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key) {
   ENTRY_TYPE * list;
 
-  if(map->table == NULL) { return 0; }
+  if(map->table == NULL) { return NULL; }
 
   list = *bucket_of(map, key);
 
   while(list) {
     if(compare_key(list->key, key)) {
-      *value_out = list->value;
-      return 1;
+      return &list->object;
     }
     list = list->next;
   }
 
-  return 0;
+  return NULL;
 }
 
-int MAP_METHOD_SET(MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value) {
+OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
   assert(map);
 
   if(map->table == NULL) { 
@@ -309,13 +313,13 @@ int MAP_METHOD_SET(MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value) {
     map->table = calloc(sizeof(ENTRY_TYPE *), initial_size);
 
     /* couldn't alloc, escape before anything breaks */
-    if(!map->table) { return 0; }
+    if(!map->table) { return NULL; }
 
     map->table_size = initial_size;
   } else if(map->entry_count > map->table_size*2) {
     if(!resize_table(map, map->table_size * 2)) {
       /* couldn't resize, escape before anything breaks */
-      return 0;
+      return NULL;
     }
   }
 
@@ -326,11 +330,11 @@ int MAP_METHOD_SET(MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value) {
     ENTRY_TYPE * entry = *slot;
 
     if(compare_key(entry->key, key)) {
-      /* already exists, overwrite */
-      entry->value = value;
-
-      /* successfully set */
-      return 1;
+      /* already exists, only deinit object, not key */
+      deinit_object(&entry->object);
+      init_object(&entry->object);
+      /* good as new */
+      return &entry->object;
     }
 
     slot = &(*slot)->next;
@@ -340,38 +344,22 @@ int MAP_METHOD_SET(MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value) {
   ENTRY_TYPE * new_entry = malloc(sizeof(*new_entry));
 
   /* couldn't alloc, escape before anything breaks */
-  if(!new_entry) { return 0; }
+  if(!new_entry) { return NULL; }
 
   new_entry->next = NULL;
   new_entry->key = key;
-  new_entry->value = value;
   *slot = new_entry;
+
+  /* initialize object */
+  init_object(&new_entry->object);
 
   map->entry_count ++;
 
-  /* successfully set */
-  return 1;
+  return &new_entry->object;
 }
 
 
-int MAP_METHOD_HAS(MAP_TYPE * map, KEY_TYPE key) {
-  ENTRY_TYPE * list;
-
-  if(map->table == NULL) { return 0; }
-
-  list = *bucket_of(map, key);
-
-  while(list) {
-    if(compare_key(list->key, key)) {
-      return 1;
-    }
-    list = list->next;
-  }
-
-  return 0;
-}
-
-int MAP_METHOD_ERASE(MAP_TYPE * map, KEY_TYPE key) {
+int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key) {
   if(map->table == NULL) { return 0; }
 
   ENTRY_TYPE ** slot = bucket_of(map, key);
@@ -384,6 +372,8 @@ int MAP_METHOD_ERASE(MAP_TYPE * map, KEY_TYPE key) {
       *slot = entry->next;
 
       /* free */
+      deinit_key(&entry->key);
+      deinit_object(&entry->object);
       free(entry);
 
       /* one less entry total */
@@ -395,6 +385,7 @@ int MAP_METHOD_ERASE(MAP_TYPE * map, KEY_TYPE key) {
     slot = &entry->next;
   }
 
+  /* nothing was destroyed */
   return 0;
 }
 
@@ -413,19 +404,18 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
 s/KEY_TYPE/${KEY_TYPE}/g;\
-s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/MAP_STRUCT/${NAME}/g;\
-s/MAP_TYPE/${NAME}_t/g;\
+s/OBJECT_TYPE/${OBJECT_TYPE}/g;\
+s/OBJMAP_STRUCT/${NAME}/g;\
+s/OBJMAP_TYPE/${NAME}_t/g;\
 s/ENTRY_STRUCT/${NAME}_entry/g;\
 s/ENTRY_TYPE/${NAME}_entry_t/g;\
 s/SIZE_TYPE/${NAME}_size_t/g;\
-s/MAP_METHOD_INIT/${NAME}_init/g;\
-s/MAP_METHOD_CLEAR/${NAME}_clear/g;\
-s/MAP_METHOD_GET/${NAME}_get/g;\
-s/MAP_METHOD_SET/${NAME}_set/g;\
-s/MAP_METHOD_ERASE/${NAME}_erase/g;\
-s/MAP_METHOD_HAS/${NAME}_has/g;\
-s/MAP_METHOD_SIZE/${NAME}_size/g;\
+s/OBJMAP_METHOD_INIT/${NAME}_init/g;\
+s/OBJMAP_METHOD_CLEAR/${NAME}_clear/g;\
+s/OBJMAP_METHOD_CREATE/${NAME}_create/g;\
+s/OBJMAP_METHOD_DESTROY/${NAME}_destroy/g;\
+s/OBJMAP_METHOD_FIND/${NAME}_find/g;\
+s/OBJMAP_METHOD_SIZE/${NAME}_size/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 

@@ -2,9 +2,9 @@
 
 set -u
 
-NAME=map
+NAME=objmap
 KEY_TYPE=int
-VALUE_TYPE=int
+OBJECT_TYPE=int
 H_FILE=
 C_FILE=
 OUTPUT_TYPE='overview'
@@ -14,12 +14,12 @@ function print() {
 }
 
 function print_usage() {
-  print "Usage: mkct.map [OPTIONS]...                                         "
-  print "Generate a key/value map implementation with the given types         "
+  print "Usage: mkct.objmap [OPTIONS]...                                      "
+  print "Generate a key/object map implementation with the given types        "
   print "                                                                     "
   print "  --name=[NAME]            Set list name/prefix                      "
   print "  --key-type=[TYPE]        Set type of keys indexed by the map       "
-  print "  --value-type=[TYPE]      Set type of values contained in the map   "
+  print "  --object-type=[TYPE]     Set type of objects contained in the map  "
   print "                                                                     "
   print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
   print "                             Defaults to [NAME].h                    "
@@ -51,12 +51,12 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --name=*)       NAME="${1#*=}";       shift 1 ;;
     --key-type=*)   KEY_TYPE="${1#*=}";   shift 1 ;;
-    --value-type=*) VALUE_TYPE="${1#*=}"; shift 1 ;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1 ;;
 
     --header-file=*) H_FILE="${1#*=}"; shift 1 ;;
     --source-file=*) C_FILE="${1#*=}"; shift 1 ;;
 
-    --name|--key-type|--value-type|--header-file|--source-file)
+    --name|--key-type|--object-type|--header-file|--source-file)
       fail_badusage "$1 requires an argument" ;;
 
     --overview) OUTPUT_TYPE='overview'; shift 1 ;;
@@ -76,17 +76,17 @@ if [ -z $C_FILE ]; then C_FILE="$NAME.c"; fi
 case "$OUTPUT_TYPE" in
   overview)
 read -r -d '' OUTPUT << "EOF"
-{{map.overview.h}}
+{{objmap.overview.h}}
 EOF
     ;;
   header)
 read -r -d '' OUTPUT << "EOF"
-{{map.h}}
+{{objmap.h}}
 EOF
     ;;
   source)
 read -r -d '' OUTPUT << "EOF"
-{{map.c}}
+{{objmap.c}}
 EOF
     ;;
   *)
@@ -101,19 +101,18 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
 s/KEY_TYPE/${KEY_TYPE}/g;\
-s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/MAP_STRUCT/${NAME}/g;\
-s/MAP_TYPE/${NAME}_t/g;\
+s/OBJECT_TYPE/${OBJECT_TYPE}/g;\
+s/OBJMAP_STRUCT/${NAME}/g;\
+s/OBJMAP_TYPE/${NAME}_t/g;\
 s/ENTRY_STRUCT/${NAME}_entry/g;\
 s/ENTRY_TYPE/${NAME}_entry_t/g;\
 s/SIZE_TYPE/${NAME}_size_t/g;\
-s/MAP_METHOD_INIT/${NAME}_init/g;\
-s/MAP_METHOD_CLEAR/${NAME}_clear/g;\
-s/MAP_METHOD_GET/${NAME}_get/g;\
-s/MAP_METHOD_SET/${NAME}_set/g;\
-s/MAP_METHOD_ERASE/${NAME}_erase/g;\
-s/MAP_METHOD_HAS/${NAME}_has/g;\
-s/MAP_METHOD_SIZE/${NAME}_size/g;\
+s/OBJMAP_METHOD_INIT/${NAME}_init/g;\
+s/OBJMAP_METHOD_CLEAR/${NAME}_clear/g;\
+s/OBJMAP_METHOD_CREATE/${NAME}_create/g;\
+s/OBJMAP_METHOD_DESTROY/${NAME}_destroy/g;\
+s/OBJMAP_METHOD_FIND/${NAME}_find/g;\
+s/OBJMAP_METHOD_SIZE/${NAME}_size/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 

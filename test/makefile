@@ -11,55 +11,97 @@ MKCT_OBJQUEUE = $(BINDIR)mkct.objqueue
 MKCT_OBJLIST  = $(BINDIR)mkct.objlist
 MKCT_OBJMAP   = $(BINDIR)mkct.objmap
 
-OBJECTS += src/stack_check.o
-OBJECTS += src/queue_check.o
-OBJECTS += src/list_check.o
-OBJECTS += src/map_check.o
+OBJECTS += src/stack/int_stack.o
+OBJECTS += src/stack/obj_stack.o
+OBJECTS += src/stack/stack_check.o
 
-OBJECTS += src/int_stack.o
-OBJECTS += src/int_queue.o
-OBJECTS += src/int_list.o
-OBJECTS += src/int_int_map.o
+OBJECTS += src/queue/int_queue.o
+OBJECTS += src/queue/obj_queue.o
+OBJECTS += src/queue/queue_check.o
 
-OBJECTS += src/obj_stack.o
-OBJECTS += src/obj_queue.o
-OBJECTS += src/obj_list.o
-OBJECTS += src/int_obj_map.o
+OBJECTS += src/map/int_int_map.o
+OBJECTS += src/map/int_obj_map.o
+OBJECTS += src/map/map_check.o
+OBJECTS += src/map/objmap_check.o
+
+OBJECTS += src/list/int_list.o
+OBJECTS += src/list/obj_list.o
+OBJECTS += src/list/list_check.o
 
 OBJECTS += src/obj.o
 OBJECTS += src/check_all.o
 
-test_all: generate_sources $(OBJECTS)
+GENERATED_SOURCES += src/stack/int_stack.h \
+                     src/stack/int_stack.c \
+                     src/stack/obj_stack.h \
+                     src/stack/obj_stack.c \
+                     src/queue/int_queue.h \
+                     src/queue/int_queue.c \
+                     src/queue/obj_queue.h \
+                     src/queue/obj_queue.c \
+                     src/list/int_list.h \
+                     src/list/int_list.c \
+                     src/list/obj_list.h \
+                     src/list/obj_list.c \
+                     src/map/int_int_map.h \
+                     src/map/int_int_map.c \
+                     src/map/int_obj_map.h \
+                     src/map/int_obj_map.c
+
+test_all: $(GENERATED_SOURCES) $(OBJECTS)
 	gcc -o $@ $(OBJECTS) -lcheck
 
 ../mkct.%:
 	make -C .. $(notdir $@)
 
-.PHONY: generate_sources
-generate_sources:
-	$(MKCT_STACK) --value-type=int --name=int_stack --header > src/int_stack.h
-	$(MKCT_STACK) --value-type=int --name=int_stack --source > src/int_stack.c
-	$(MKCT_QUEUE) --value-type=int --name=int_queue --header > src/int_queue.h
-	$(MKCT_QUEUE) --value-type=int --name=int_queue --source > src/int_queue.c
-	$(MKCT_LIST) --value-type=int --name=int_list --header > src/int_list.h
-	$(MKCT_LIST) --value-type=int --name=int_list --source > src/int_list.c
-	$(MKCT_MAP) --key-type=int --value-type=int --name=int_int_map --header > src/int_int_map.h
-	$(MKCT_MAP) --key-type=int --value-type=int --name=int_int_map --source > src/int_int_map.c
-	$(MKCT_OBJSTACK) --value-type=int --name=obj_stack --header > src/obj_stack.h
-	$(MKCT_OBJSTACK) --value-type=int --name=obj_stack --source > src/obj_stack.c
-	$(MKCT_OBJQUEUE) --value-type=int --name=obj_queue --header > src/obj_queue.h
-	$(MKCT_OBJQUEUE) --value-type=int --name=obj_queue --source > src/obj_queue.c
-	$(MKCT_OBJLIST) --value-type=int --name=obj_list --header > src/obj_list.h
-	$(MKCT_OBJLIST) --value-type=int --name=obj_list --source > src/obj_list.c
-	$(MKCT_OBJMAP) --key-type=int --value-type=int --name=int_obj_map --header > src/int_obj_map.h
-	$(MKCT_OBJMAP) --key-type=int --value-type=int --name=int_obj_map --source > src/int_obj_map.c
+#### stack ####
+src/stack/int_stack.h:
+	$(MKCT_STACK) --value-type=int --name=int_stack --header > src/stack/int_stack.h
+src/stack/int_stack.c:
+	$(MKCT_STACK) --value-type=int --name=int_stack --source > src/stack/int_stack.c
+src/stack/obj_stack.h:
+	$(MKCT_OBJSTACK) --value-type=int --name=obj_stack --header > src/stack/obj_stack.h
+src/stack/obj_stack.c:
+	$(MKCT_OBJSTACK) --value-type=int --name=obj_stack --source > src/stack/obj_stack.c
+
+#### queue ####
+src/queue/int_queue.h:
+	$(MKCT_QUEUE) --value-type=int --name=int_queue --header > src/queue/int_queue.h
+src/queue/int_queue.c:
+	$(MKCT_QUEUE) --value-type=int --name=int_queue --source > src/queue/int_queue.c
+src/queue/obj_queue.h:
+	$(MKCT_OBJQUEUE) --value-type=int --name=obj_queue --header > src/queue/obj_queue.h
+src/queue/obj_queue.c:
+	$(MKCT_OBJQUEUE) --value-type=int --name=obj_queue --source > src/queue/obj_queue.c
+
+#### list ####
+src/list/int_list.h:
+	$(MKCT_LIST) --value-type=int --name=int_list --header > src/list/int_list.h
+src/list/int_list.c:
+	$(MKCT_LIST) --value-type=int --name=int_list --source > src/list/int_list.c
+src/list/obj_list.h:
+	$(MKCT_OBJLIST) --value-type=int --name=obj_list --header > src/list/obj_list.h
+src/list/obj_list.c:
+	$(MKCT_OBJLIST) --value-type=int --name=obj_list --source > src/list/obj_list.c
+
+#### map ####
+src/map/int_int_map.h:
+	$(MKCT_MAP) --key-type=int --value-type=int --name=int_int_map --header > $@
+src/map/int_int_map.c:
+	$(MKCT_MAP) --key-type=int --value-type=int --name=int_int_map --source > $@
+src/map/int_obj_map.h: src/map/int_obj_map.h.patch
+	$(MKCT_OBJMAP) --key-type=int --object-type=obj_t --name=int_obj_map --header > $@
+	patch -d src/ -p1 < $@.patch
+src/map/int_obj_map.c: src/map/int_obj_map.c.patch
+	$(MKCT_OBJMAP) --key-type=int --object-type=obj_t --name=int_obj_map --source > $@
+	patch -d src/ -p1 < $@.patch
 
 %.o: %.c
-	gcc -c -o $@ $<
+	gcc -Wall -Wpedantic -c -o $@ $< -Isrc/
 
 .PHONY: clean
 clean:
-	rm 'test_all'
+	rm 'test_all' $(GENERATED_SOURCES)
 	find -name '*.o' -delete
 	find -name '*.rej' -delete
 	find -name '*.orig' -delete

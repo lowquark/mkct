@@ -1,5 +1,6 @@
 
 #include "int_int_map.h"
+#include "int_obj_map.h"
 
 #include <check.h>
 #include <stdlib.h>

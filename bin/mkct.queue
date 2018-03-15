@@ -82,7 +82,7 @@ read -r -d '' OUTPUT << "EOF"
 #define INCLUDE_GUARD
 
 /*
- * FIFO queue of `VALUE_TYPE`s
+ * FIFO queue of `VALUE_TYPE`s. Values are copied, not referenced.
  */
 typedef struct QUEUE_STRUCT {
   VALUE_TYPE * buffer_begin;
@@ -95,52 +95,51 @@ typedef struct QUEUE_STRUCT {
 } QUEUE_TYPE;
 
 /*
- * Initializes the given queue to a valid state.
+ * Initializes the given `QUEUE_TYPE` to a valid, empty state.
+ *
+ * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to pop all values
+ * from the queue.
  */
 void QUEUE_METHOD_INIT(QUEUE_TYPE * q);
 
 /*
- * Deletes all values present in the queue.
+ * Pops all values present in the queue, and frees all allocated memory it
+ * owns.
  */
 void QUEUE_METHOD_CLEAR(QUEUE_TYPE * q);
 
 /*
- * Pushes a value onto the back of the queue. Reallocates buffer space if necessary.
- *
- * Return Value:
- *   Returns 1 if successful, and 0 if memory allocation failed.
+ * Pushes the given value onto the back of the queue, reallocating buffer space
+ * if necessary. Returns 1 if successful, and 0 otherwise.
  */
 int QUEUE_METHOD_PUSH(QUEUE_TYPE * q, VALUE_TYPE value);
 
 /*
- * Pops a value from the front of the queue.
- *
- * Return Value:
- *   Returns 1 if a value was popped, and 0 if the queue was empty.
+ * If the queue is non-empty, pops (erases) its front value and returns 1.
+ * Otherwise, returns 0.
  */
 int QUEUE_METHOD_POP(QUEUE_TYPE * q);
 
 /*
- * Copies the value from the front of the queue into `value_out`.
- *
- * Return Value:
- *   If the queue is empty, returns 0 and leaves `value_out` unmodified.
- *   Returns 1 otherwise.
+ * If the queue is non-empty, stores its top value into `*value_out` and returns 1.
+ * Otherwise, leaves `*value_out` unmodified and returns 0.
  */
 int QUEUE_METHOD_PEEK(QUEUE_TYPE * q, VALUE_TYPE * value_out);
 
 /*
- * Copies the value from the queue at the given index `idx` into `value_out`.
- *
- * Return Value:
- *   If the queue is empty, or if idx is larger than the queue's size, returns
- *   0 and leaves `value_out` unmodified. Returns 1 otherwise.
+ * If a value exists at the given queue index, stores its value in `*value_out` and returns 1
+ * Otherwise, leaves `*value_out` unmodified and returns 0.
  *
  * Note:
  *   An index of 0 is the front of the queue. The back of the queue is indexed
  *   by the queue's size minus one.
  */
 int QUEUE_METHOD_AT(QUEUE_TYPE * q, VALUE_TYPE * value_out, int idx);
+
+/*
+ * Returns the number of elements in the queue
+ */
+#define QUEUE_METHOD_SIZE(_queue_) (((const QUEUE_TYPE *)_queue_)->size)
 
 #endif
 

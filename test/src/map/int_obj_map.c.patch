@@ -1,0 +1,18 @@
+--- src/map/int_obj_map.c	2018-03-14 19:58:03.778581215 -0600
++++ src/map/int_obj_map.c	2018-03-14 20:09:24.138601872 -0600
+@@ -36,13 +36,13 @@
+ /* TODO: Initialize a object, if applicable. This function is called
+  * when entries created or overwritten. */
+ static void init_object(obj_t * object) {
+-  memset(object, 0, sizeof(obj_t));
++  obj_init(object);
+ }
+ 
+ /* TODO: Cleanup a object, if applicable. This function is called
+  * when entries are erased or overwritten. */
+ static void deinit_object(obj_t * object) {
+-  memset(object, 0, sizeof(obj_t));
++  obj_clear(object);
+ }
+ 
+ /*** general functionaility ***/

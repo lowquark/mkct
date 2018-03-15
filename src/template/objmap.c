@@ -9,7 +9,7 @@
 typedef struct ENTRY_STRUCT {
   struct ENTRY_STRUCT * next;
   KEY_TYPE   key;
-  OBJECT_TYPE value;
+  OBJECT_TYPE object;
 } ENTRY_TYPE;
 
 /*** type specific functionaility ***/
@@ -34,16 +34,16 @@ static unsigned long hash_key(KEY_TYPE key) {
 static void deinit_key(KEY_TYPE * key) {
 }
 
-/* TODO: Initialize a value, if applicable. This function is called
+/* TODO: Initialize a object, if applicable. This function is called
  * when entries created or overwritten. */
-static void init_value(OBJECT_TYPE * value) {
-  memset(value, 0, sizeof(OBJECT_TYPE));
+static void init_object(OBJECT_TYPE * object) {
+  memset(object, 0, sizeof(OBJECT_TYPE));
 }
 
-/* TODO: Cleanup a value, if applicable. This function is called
+/* TODO: Cleanup a object, if applicable. This function is called
  * when entries are erased or overwritten. */
-static void deinit_value(OBJECT_TYPE * value) {
-  memset(value, 0, sizeof(OBJECT_TYPE));
+static void deinit_object(OBJECT_TYPE * object) {
+  memset(object, 0, sizeof(OBJECT_TYPE));
 }
 
 /*** general functionaility ***/
@@ -127,7 +127,7 @@ void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map) {
       ENTRY_TYPE * next = entry->next;
       /* destroy this one */
       deinit_key(&entry->key);
-      deinit_value(&entry->value);
+      deinit_object(&entry->object);
       free(entry);
       /* try again with the next */
       entry = next;
@@ -153,7 +153,7 @@ OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key) {
 
   while(list) {
     if(compare_key(list->key, key)) {
-      return &list->value;
+      return &list->object;
     }
     list = list->next;
   }
@@ -186,11 +186,11 @@ OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
     ENTRY_TYPE * entry = *slot;
 
     if(compare_key(entry->key, key)) {
-      /* already exists, only deinit value, not key */
-      deinit_value(&entry->value);
-      init_value(&entry->value);
+      /* already exists, only deinit object, not key */
+      deinit_object(&entry->object);
+      init_object(&entry->object);
       /* good as new */
-      return &entry->value;
+      return &entry->object;
     }
 
     slot = &(*slot)->next;
@@ -207,11 +207,11 @@ OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
   *slot = new_entry;
 
   /* initialize object */
-  init_value(&new_entry->value);
+  init_object(&new_entry->object);
 
   map->entry_count ++;
 
-  return &new_entry->value;
+  return &new_entry->object;
 }
 
 
@@ -229,7 +229,7 @@ int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key) {
 
       /* free */
       deinit_key(&entry->key);
-      deinit_value(&entry->value);
+      deinit_object(&entry->object);
       free(entry);
 
       /* one less entry total */

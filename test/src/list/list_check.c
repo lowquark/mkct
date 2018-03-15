@@ -21,7 +21,6 @@ START_TEST(init) {
 END_TEST
 
 START_TEST(push) {
-  int i;
   int_list_t list;
   int_list_node_t * node;
 

@@ -1,0 +1,11 @@
+--- src/map/int_obj_map.h	2018-03-14 19:56:30.041911702 -0600
++++ src/map/int_obj_map.h	2018-03-14 19:56:34.621911841 -0600
+@@ -1,6 +1,8 @@
+ #ifndef _INT_OBJ_MAP_H_
+ #define _INT_OBJ_MAP_H_
+ 
++#include "obj.h"
++
+ struct int_obj_map_entry;
+ 
+ /*

@@ -34,18 +34,23 @@ START_TEST(push_pop) {
     int N = rand() % 200;
 
     for(int i = 0 ; i < N ; i ++) {
+      ck_assert_int_eq(int_queue_size(&queue), i);
       int_queue_push(&queue, i);
     }
+
+    ck_assert_int_eq(int_queue_size(&queue), N);
 
     for(int i = 0 ; i < N ; i ++) {
       int value;
       ck_assert_int_eq(int_queue_peek(&queue, &value), 1);
       ck_assert_int_eq(value, i);
       ck_assert_int_eq(int_queue_pop(&queue), 1);
+
+      ck_assert_int_eq(int_queue_size(&queue), N - i - 1);
     }
 
     ck_assert_int_eq(int_queue_pop(&queue), 0);
-    ck_assert_int_eq(queue.size, 0);
+    ck_assert_int_eq(int_queue_size(&queue), 0);
   }
 
   int_queue_clear(&queue);

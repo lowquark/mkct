@@ -1,37 +1,39 @@
-#ifndef INCLUDE_GUARD
-#define INCLUDE_GUARD
+#ifndef _INT_OBJ_MAP_H_
+#define _INT_OBJ_MAP_H_
 
-struct ENTRY_STRUCT;
+#include "obj.h"
+
+struct int_obj_map_entry;
 
 /*
- * Hash map from `KEY_TYPE` keys to `OBJECT_TYPE` objects. Manages
+ * Hash map from `int` keys to `obj_t` objects. Manages
  * initialization and allocation of the objects, and stores shallow copies of
  * their keys.
  */
-typedef struct OBJMAP_STRUCT {
-  struct ENTRY_STRUCT ** table;
+typedef struct int_obj_map {
+  struct int_obj_map_entry ** table;
   unsigned long table_size;
   unsigned long entry_count;
-} OBJMAP_TYPE;
+} int_obj_map_t;
 
-/* Initializes the given `OBJMAP_TYPE` to a valid, empty state.
+/* Initializes the given `int_obj_map_t` to a valid, empty state.
  *
- * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to destroy all
+ * Warning: No memory will be freed. Use int_obj_map_clear to destroy all
  * objects in the map.
  */
-void OBJMAP_METHOD_INIT(OBJMAP_TYPE * map);
+void int_obj_map_init(int_obj_map_t * map);
 
 /*
  * Destroys all objects in the map, and frees all allocated memory it owns.
  */
-void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map);
+void int_obj_map_clear(int_obj_map_t * map);
 
 /* Looks up the object using a given key.
  *
  * Returns a pointer to the found object. Returns NULL if no object has key
  * `key`.
  */
-OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key);
+obj_t * int_obj_map_find(int_obj_map_t * map, int key);
 
 /* Creates a new object for the given key.
  *
@@ -40,17 +42,17 @@ OBJECT_TYPE * OBJMAP_METHOD_FIND(OBJMAP_TYPE * map, KEY_TYPE key);
  *
  * Returns a pointer to the new entry.
  */
-OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key);
+obj_t * int_obj_map_create(int_obj_map_t * map, int key);
 
 /* Finds and destroys the object with the given key.
  *
  * Returns 1 if the object was found (and destroyed) and 0 otherwise.
  */
-int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key);
+int int_obj_map_destroy(int_obj_map_t * map, int key);
 
 /*
  * Returns the number of elements in the map
  */
-#define OBJMAP_METHOD_SIZE(_map_) (((const MAP_TYPE *)_map_)->entry_count)
+#define int_obj_map_size(_map_) (((const MAP_TYPE *)_map_)->entry_count)
 
 #endif
