@@ -1,5 +1,6 @@
 #include "int_int_map.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -31,99 +32,131 @@ static int compare_key(int key0, int key1) {
 /*** general functionaility ***/
 /******************************/
 
+typedef enum entry_flag {
+  ENTRY_FLAG_NULL = 0,
+  ENTRY_FLAG_SET,
+  ENTRY_FLAG_UNSET,
+} entry_flag_t;
 
 typedef struct int_int_map_entry {
-  struct int_int_map_entry * next;
-  int   key;
-  int value;
+  entry_flag_t flag;
+  int     key;
+  int   value;
 } int_int_map_entry_t;
 
 
 static const unsigned long initial_size = 32;
 
-static unsigned long hash_idx(int key, unsigned long table_size) {
-  assert(table_size > 0);
+/* search for an entry in the table */
+static int_int_map_entry_t * find(int_int_map_t * map, int key) {
+  unsigned long idx;
+  unsigned long first_idx;
 
-  return hash_key(key) % table_size;
+  idx = hash_key(key) % map->table_size;
+  first_idx = idx;
+
+  /* iterate over set and unset entries in this linearly-probed chain */
+  while(map->table[idx].flag != ENTRY_FLAG_NULL) {
+    /* compare key if set */
+    if(map->table[idx].flag == ENTRY_FLAG_SET && map->table[idx].key == key) {
+      /* this is the one */
+      return map->table + idx;
+    }
+
+    idx ++;
+    /* wrap */
+    if(idx >= map->table_size) { idx -= map->table_size; }
+    /* searched whole table, give up */
+    if(idx == first_idx) { return NULL; }
+  }
+
+  /* reached end of chain, give up */
+  return NULL;
 }
 
-static int_int_map_entry_t ** bucket_of(int_int_map_t * map, int key) {
-  assert(map->table);
+/* search for an unset entry, or a set entry with a matching key in the table */
+static int_int_map_entry_t * find_insert(int_int_map_t * map, int key) {
+  unsigned long idx;
+  unsigned long first_idx;
 
-  return map->table + hash_idx(key, map->table_size);
+  idx = hash_key(key) % map->table_size;
+  first_idx = idx;
+
+  /* skip set entries whose keys do not match */
+  while(map->table[idx].flag == ENTRY_FLAG_SET && map->table[idx].key != key) {
+    idx ++;
+    /* wrap */
+    if(idx >= map->table_size) { idx -= map->table_size; }
+    /* searched whole table, give up */
+    if(idx == first_idx) { return NULL; }
+  }
+
+  /* this marks the first null; unset; or set entry whose key matches */
+  return map->table + idx;
 }
 
 static int resize_table(int_int_map_t * map, unsigned long newsize) {
+  unsigned long idx;
+  unsigned long new_fill_count = 0;
+
   unsigned long i;
   unsigned long table_size = map->table_size;
-  int_int_map_entry_t ** table = map->table;
-  int_int_map_entry_t ** newtable = calloc(sizeof(*newtable), newsize);
+  int_int_map_entry_t * table = map->table;
+  int_int_map_entry_t * newtable = calloc(sizeof(*newtable), newsize);
+  int_int_map_entry_t * entry;
+
+  assert(newsize >= table_size);
 
   if(!newtable) {
     return 0;
   }
 
   for(i = 0 ; i < table_size ; i ++) {
-    /* free chain */
-    int_int_map_entry_t * entry = table[i];
+    entry = table + i;
+    /* look for set entries */
+    if(entry->flag == ENTRY_FLAG_SET) {
+      /* copy to new table at hashed location */
 
-    while(entry) {
-      /* save next pointer */
-      int_int_map_entry_t * next = entry->next;
+      /* new hash location */
+      idx = hash_key(entry->key) % newsize;
 
-      unsigned long idx = hash_idx(entry->key, newsize);
-
-      /* lookup chain in the new table */
-      int_int_map_entry_t ** slot = newtable + idx;
-
-      /* advance slot in the new chain */
-      while(*slot) {
-        assert(!compare_key((*slot)->key, entry->key));
-        slot = &(*slot)->next;
+      /* skip set entries, also key matches are not possible */
+      while(newtable[idx].flag == ENTRY_FLAG_SET) {
+        idx ++;
+        /* wrap */
+        if(idx >= newsize) { idx -= newsize; }
+        /* infinite loop not possible, given newsize >= table_size */
       }
 
-      /* place at end of destination chain */
-      *slot = entry;
-      entry->next = NULL;
+      /* newtable[idx] is the first null */
+      newtable[idx].flag  = ENTRY_FLAG_SET;
+      newtable[idx].key   = entry->key;
+      newtable[idx].value = entry->value;
 
-      /* repeate again with the next entry in the old chain */
-      entry = next;
+      /* update new fill count */
+      new_fill_count ++;
     }
   }
 
+  /* free old table and replace */
   free(table);
   map->table = newtable;
   map->table_size = newsize;
+  map->fill_count = new_fill_count;
 
   return 1;
 }
 
-void int_int_map_init(int_int_map_t * m) {
-  m->table       = NULL;
-  m->table_size  = 0;
-  m->entry_count = 0;
+void int_int_map_init(int_int_map_t * map) {
+  assert(map);
+
+  map->table      = NULL;
+  map->table_size = 0;
+  map->fill_count = 0;
 }
 
 void int_int_map_clear(int_int_map_t * map) {
-  unsigned long i;
-  unsigned long table_size = map->table_size;
-  int_int_map_entry_t ** table = map->table;
-
-  for(i = 0 ; i < table_size ; i ++) {
-    /* free chain */
-    int_int_map_entry_t * entry = table[i];
-
-    while(entry) {
-      /* cache next pointer */
-      int_int_map_entry_t * next = entry->next;
-      /* destroy this one */
-      free(entry);
-      /* try again with the next */
-      entry = next;
-    }
-
-    table[i] = NULL;
-  }
+  assert(map);
 
   /* free buffer */
   free(map->table);
@@ -134,116 +167,78 @@ void int_int_map_clear(int_int_map_t * map) {
 }
 
 int int_int_map_get(int_int_map_t * map, int key, int * value_out) {
-  int_int_map_entry_t * list;
+  int_int_map_entry_t * entry;
+
+  assert(map);
 
   if(map->table == NULL) { return 0; }
 
-  list = *bucket_of(map, key);
+  entry = find(map, key);
 
-  while(list) {
-    if(compare_key(list->key, key)) {
-      *value_out = list->value;
-      return 1;
-    }
-    list = list->next;
+  if(entry) {
+    *value_out = entry->value;
   }
 
-  return 0;
+  return entry != NULL;
 }
 
 int int_int_map_set(int_int_map_t * map, int key, int value) {
+  int_int_map_entry_t * entry;
+
   assert(map);
 
   if(map->table == NULL) { 
     /* allocate since not allocated already */
-    map->table = calloc(sizeof(int_int_map_entry_t *), initial_size);
+    map->table = calloc(sizeof(int_int_map_entry_t), initial_size);
 
     /* couldn't alloc, escape before anything breaks */
     if(!map->table) { return 0; }
 
     map->table_size = initial_size;
-  } else if(map->entry_count > map->table_size*2) {
+  } else if(map->fill_count * 2 > map->table_size) {
     if(!resize_table(map, map->table_size * 2)) {
       /* couldn't resize, escape before anything breaks */
       return 0;
     }
   }
 
-  int_int_map_entry_t ** slot = bucket_of(map, key);
+  entry = find_insert(map, key);
 
-  /* advance last slot */
-  while(*slot) {
-    int_int_map_entry_t * entry = *slot;
-
-    if(compare_key(entry->key, key)) {
-      /* already exists, overwrite */
-      entry->value = value;
-
-      /* successfully set */
-      return 1;
+  if(entry) {
+    if(entry->flag == ENTRY_FLAG_NULL) {
+      /* previously null, increment fill count */
+      map->fill_count ++;
     }
 
-    slot = &(*slot)->next;
+    entry->flag  = ENTRY_FLAG_SET;
+    entry->key   = key;
+    entry->value = value;
   }
 
-  /* reached end of chain, create a new entry */
-  int_int_map_entry_t * new_entry = malloc(sizeof(*new_entry));
-
-  /* couldn't alloc, escape before anything breaks */
-  if(!new_entry) { return 0; }
-
-  new_entry->next = NULL;
-  new_entry->key = key;
-  new_entry->value = value;
-  *slot = new_entry;
-
-  map->entry_count ++;
-
-  /* successfully set */
-  return 1;
+  return entry != NULL;
 }
 
 
 int int_int_map_has(int_int_map_t * map, int key) {
-  int_int_map_entry_t * list;
+  assert(map);
 
   if(map->table == NULL) { return 0; }
 
-  list = *bucket_of(map, key);
-
-  while(list) {
-    if(compare_key(list->key, key)) {
-      return 1;
-    }
-    list = list->next;
-  }
-
-  return 0;
+  return find(map, key) != NULL;
 }
 
 int int_int_map_erase(int_int_map_t * map, int key) {
+  int_int_map_entry_t * entry;
+
+  assert(map);
+
   if(map->table == NULL) { return 0; }
 
-  int_int_map_entry_t ** slot = bucket_of(map, key);
+  entry = find(map, key);
 
-  while(*slot) {
-    int_int_map_entry_t * entry = *slot;
-
-    if(compare_key(entry->key, key)) {
-      /* matches, skip over */
-      *slot = entry->next;
-
-      /* free */
-      free(entry);
-
-      /* one less entry total */
-      map->entry_count --;
-
-      return 1;
-    }
-
-    slot = &entry->next;
+  if(entry) {
+    entry->flag = ENTRY_FLAG_UNSET;
   }
 
-  return 0;
+  return entry != NULL;
 }

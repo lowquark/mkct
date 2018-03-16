@@ -4,13 +4,12 @@
 struct int_int_map_entry;
 
 /*
- * Hash map from `int` keys to `int` values. Keys/Values are
- * simply copied, not referenced.
+ * Hash map from `int` to `int` via linear-probing.
  */
 typedef struct int_int_map {
-  struct int_int_map_entry ** table;
+  struct int_int_map_entry * table;
   unsigned long table_size;
-  unsigned long entry_count;
+  unsigned long fill_count;
 } int_int_map_t;
 
 
@@ -47,10 +46,5 @@ int  int_int_map_has   (int_int_map_t * map, int key);
  * Returns 1 if the value was found (and erased) and 0 otherwise.
  */
 int  int_int_map_erase (int_int_map_t * map, int key);
-
-/*
- * Returns the number of elements in the map
- */
-#define int_int_map_size(_map_) (((const int_int_map_t *)_map_)->entry_count)
 
 #endif

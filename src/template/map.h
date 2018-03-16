@@ -4,13 +4,12 @@
 struct ENTRY_STRUCT;
 
 /*
- * Hash map from `KEY_TYPE` keys to `VALUE_TYPE` values. Keys/Values are
- * simply copied, not referenced.
+ * Hash map from `KEY_TYPE` to `VALUE_TYPE` via linear-probing.
  */
 typedef struct MAP_STRUCT {
-  struct ENTRY_STRUCT ** table;
+  struct ENTRY_STRUCT * table;
   unsigned long table_size;
-  unsigned long entry_count;
+  unsigned long fill_count;
 } MAP_TYPE;
 
 
@@ -47,10 +46,5 @@ int  MAP_METHOD_HAS   (MAP_TYPE * map, KEY_TYPE key);
  * Returns 1 if the value was found (and erased) and 0 otherwise.
  */
 int  MAP_METHOD_ERASE (MAP_TYPE * map, KEY_TYPE key);
-
-/*
- * Returns the number of elements in the map
- */
-#define MAP_METHOD_SIZE(_map_) (((const MAP_TYPE *)_map_)->entry_count)
 
 #endif

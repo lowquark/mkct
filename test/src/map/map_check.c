@@ -13,16 +13,18 @@ static void erase_randomly_cycle(int_int_map_t * map) {
     _Bool set;
   };
 
-  struct test_entry_t tests[100];
+  const int N = 100;
+
+  struct test_entry_t tests[N];
 
   // set several entries in the map
-  for(int i = 0 ; i < 100 ; i ++) {
+  for(int i = 0 ; i < N ; i ++) {
     int salt = rand();
 
     // note: impossible to have duplicates, but still very sparse
     int key = (int)(100 * i + (rand() % 100));
 
-    int_int_map_set(map, key, salt);
+    ck_assert_int_eq(int_int_map_set(map, key, salt), 1);
 
     tests[i].salt = salt;
     tests[i].key = key;
@@ -30,7 +32,7 @@ static void erase_randomly_cycle(int_int_map_t * map) {
   }
 
   // affirm that data is intact, values match those set
-  for(int i = 0 ; i < 100 ; i ++) {
+  for(int i = 0 ; i < N ; i ++) {
     int key = tests[i].key;
     int value;
 
@@ -40,7 +42,7 @@ static void erase_randomly_cycle(int_int_map_t * map) {
   }
 
   // erase several entries
-  for(int i = 0 ; i < 100 ; i ++) {
+  for(int i = 0 ; i < N ; i ++) {
     int key = tests[i].key;
 
     if((rand() % 10) == 0) {
@@ -51,7 +53,7 @@ static void erase_randomly_cycle(int_int_map_t * map) {
 
   // affirm that those that were erased are gone,
   // affirm that those that remain are still valid
-  for(int i = 0 ; i < 100 ; i ++) {
+  for(int i = 0 ; i < N ; i ++) {
     int key = tests[i].key;
     int value;
 
@@ -64,7 +66,7 @@ static void erase_randomly_cycle(int_int_map_t * map) {
   }
 
   // erase remaining entries
-  for(int i = 0 ; i < 100 ; i ++) {
+  for(int i = 0 ; i < N ; i ++) {
     if(tests[i].set) {
       int key = tests[i].key;
 
@@ -75,13 +77,37 @@ static void erase_randomly_cycle(int_int_map_t * map) {
   }
 
   // affirm that all entries have been erased
-  for(int i = 0 ; i < 100 ; i ++) {
+  for(int i = 0 ; i < N ; i ++) {
     int key = tests[i].key;
     int value;
 
     ck_assert_int_eq(int_int_map_get(map, key, &value), 0);
   }
 }
+
+START_TEST(set_get_basic) {
+  int value;
+
+  int_int_map_t map;
+
+  int_int_map_init(&map);
+
+  ck_assert_int_eq(int_int_map_set(&map, 0xBEEF, 0xCAFE), 1);
+  ck_assert_int_eq(int_int_map_get(&map, 0xBEEF, &value), 1);
+  ck_assert_int_eq(value, 0xCAFE);
+
+  int_int_map_clear(&map);
+}
+END_TEST
+
+START_TEST(set_erase_get_basic) {
+  int_int_map_t map;
+
+  int_int_map_init(&map);
+
+  int_int_map_clear(&map);
+}
+END_TEST
 
 START_TEST(erase_randomly) {
   srand((unsigned int)time(NULL));
@@ -108,7 +134,8 @@ Suite * map_check(void) {
 
   tcase_add_test(tc, erase_randomly);
 
-  //tcase_add_test(tc, push);
+  tcase_add_test(tc, set_get_basic);
+  tcase_add_test(tc, set_erase_get_basic);
   //tcase_add_test(tc, iterate);
   //tcase_add_test(tc, erase_even);
 

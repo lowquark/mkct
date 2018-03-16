@@ -97,7 +97,7 @@ src/map/int_obj_map.c: src/map/int_obj_map.c.patch
 	patch -d src/ -p1 < $@.patch
 
 %.o: %.c
-	gcc -Wall -Wpedantic -c -o $@ $< -Isrc/
+	gcc -g -Wall -Wpedantic -c -o $@ $< -Isrc/
 
 .PHONY: clean
 clean:
