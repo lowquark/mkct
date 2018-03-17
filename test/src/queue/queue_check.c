@@ -63,7 +63,7 @@ Suite * queue_check(void) {
 
   s = suite_create("queue");
 
-  tc = tcase_create("simple int");
+  tc = tcase_create("unnamed");
 
   tcase_add_test(tc, init);
   tcase_add_test(tc, push_pop);

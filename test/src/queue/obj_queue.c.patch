@@ -1,6 +1,6 @@
---- int_obj_map.c	2018-03-16 21:09:50.358479882 -0600
-+++ int_obj_map.c	2018-03-16 21:11:49.125150156 -0600
-@@ -28,11 +28,12 @@
+--- obj_queue.c	2018-03-16 22:16:29.378601303 -0600
++++ obj_queue.c	2018-03-16 22:18:53.468605677 -0600
+@@ -10,11 +10,12 @@
  
  /* This function is called after an object's memory has been allocated. */
  static void object_init(obj_t * obj) {

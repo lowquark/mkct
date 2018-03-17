@@ -3,7 +3,7 @@
 set -u
 
 NAME=queue
-VALUE_TYPE=int
+OBJECT_TYPE=int
 H_FILE=
 C_FILE=
 OUTPUT_TYPE='overview'
@@ -17,7 +17,7 @@ function print_usage() {
   print "Generate a dynamically-sized queue implementation with the given type"
   print "                                                                     "
   print "  --name=[NAME]            Set queue name/prefix                     "
-  print "  --value-type=[TYPE]      Set type of values contained in the queue "
+  print "  --object-type=[TYPE]      Set type of values contained in the queue "
   print "                                                                     "
   print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
   print "                             Defaults to [NAME].h                    "
@@ -48,12 +48,12 @@ function fail_badusage() {
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --name=*)       NAME="${1#*=}";       shift 1 ;;
-    --value-type=*) VALUE_TYPE="${1#*=}"; shift 1 ;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1 ;;
 
     --header-file=*) H_FILE="${1#*=}"; shift 1 ;;
     --source-file=*) C_FILE="${1#*=}"; shift 1 ;;
 
-    --name|--value-type|--header-file|--source-file)
+    --name|--object-type|--header-file|--source-file)
       fail_badusage "$1 requires an argument" ;;
 
     --overview) OUTPUT_TYPE='overview'; shift 1 ;;
@@ -73,17 +73,17 @@ if [ -z $C_FILE ]; then C_FILE="$NAME.c"; fi
 case "$OUTPUT_TYPE" in
   overview)
 read -r -d '' OUTPUT << "EOF"
-{{queue.overview.h}}
+{{objqueue.overview.h}}
 EOF
     ;;
   header)
 read -r -d '' OUTPUT << "EOF"
-{{queue.h}}
+{{objqueue.h}}
 EOF
     ;;
   source)
 read -r -d '' OUTPUT << "EOF"
-{{queue.c}}
+{{objqueue.c}}
 EOF
     ;;
   *)
@@ -97,17 +97,17 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
-s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/QUEUE_STRUCT/${NAME}/g;\
-s/QUEUE_TYPE/${NAME}_t/g;\
+s/OBJECT_TYPE/${OBJECT_TYPE}/g;\
+s/OBJQUEUE_STRUCT/${NAME}/g;\
+s/OBJQUEUE_TYPE/${NAME}_t/g;\
 s/SIZE_TYPE/${NAME}_size_t/g;\
-s/QUEUE_METHOD_INIT/${NAME}_init/g;\
-s/QUEUE_METHOD_CLEAR/${NAME}_clear/g;\
-s/QUEUE_METHOD_PUSH/${NAME}_push/g;\
-s/QUEUE_METHOD_POP/${NAME}_pop/g;\
-s/QUEUE_METHOD_PEEK/${NAME}_peek/g;\
-s/QUEUE_METHOD_AT/${NAME}_at/g;\
-s/QUEUE_METHOD_SIZE/${NAME}_size/g;\
+s/OBJQUEUE_METHOD_INIT/${NAME}_init/g;\
+s/OBJQUEUE_METHOD_CLEAR/${NAME}_clear/g;\
+s/OBJQUEUE_METHOD_PUSH/${NAME}_push/g;\
+s/OBJQUEUE_METHOD_POP/${NAME}_pop/g;\
+s/OBJQUEUE_METHOD_PEEK/${NAME}_peek/g;\
+s/OBJQUEUE_METHOD_AT/${NAME}_at/g;\
+s/OBJQUEUE_METHOD_SIZE/${NAME}_size/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 

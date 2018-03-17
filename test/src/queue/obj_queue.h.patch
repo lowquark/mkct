@@ -1,0 +1,11 @@
+--- obj_queue.h	2018-03-16 21:57:59.891900950 -0600
++++ obj_queue.h	2018-03-16 21:59:03.295236208 -0600
+@@ -1,6 +1,8 @@
+ #ifndef _OBJ_QUEUE_H_
+ #define _OBJ_QUEUE_H_
+ 
++#include <obj.h>
++
+ /*
+  * FIFO queue of `obj_t`s. Grows dynamically, and manages object
+  * initialization / allocation.

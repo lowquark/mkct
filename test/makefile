@@ -18,6 +18,7 @@ OBJECTS += src/stack/stack_check.o
 OBJECTS += src/queue/int_queue.o
 OBJECTS += src/queue/obj_queue.o
 OBJECTS += src/queue/queue_check.o
+OBJECTS += src/queue/objqueue_check.o
 
 OBJECTS += src/map/int_int_map.o
 OBJECTS += src/map/int_obj_map.o
@@ -70,9 +71,11 @@ src/queue/int_queue.h:
 src/queue/int_queue.c:
 	$(MKCT_QUEUE) --value-type=int --name=int_queue --source > src/queue/int_queue.c
 src/queue/obj_queue.h:
-	$(MKCT_OBJQUEUE) --value-type=int --name=obj_queue --header > src/queue/obj_queue.h
+	$(MKCT_OBJQUEUE) --object-type=obj_t --name=obj_queue --header > src/queue/obj_queue.h
+	patch -d src/queue/ < $@.patch
 src/queue/obj_queue.c:
-	$(MKCT_OBJQUEUE) --value-type=int --name=obj_queue --source > src/queue/obj_queue.c
+	$(MKCT_OBJQUEUE) --object-type=obj_t --name=obj_queue --source > src/queue/obj_queue.c
+	patch -d src/queue/ < $@.patch
 
 #### list ####
 src/list/int_list.h:
@@ -91,10 +94,10 @@ src/map/int_int_map.c:
 	$(MKCT_MAP) --key-type=int --value-type=int --name=int_int_map --source > $@
 src/map/int_obj_map.h: src/map/int_obj_map.h.patch
 	$(MKCT_OBJMAP) --key-type=int --object-type=obj_t --name=int_obj_map --header > $@
-	patch -d src/ -p1 < $@.patch
+	patch -d src/map/ < $@.patch
 src/map/int_obj_map.c: src/map/int_obj_map.c.patch
 	$(MKCT_OBJMAP) --key-type=int --object-type=obj_t --name=int_obj_map --source > $@
-	patch -d src/ -p1 < $@.patch
+	patch -d src/map/ < $@.patch
 
 %.o: %.c
 	gcc -g -Wall -Wpedantic -c -o $@ $< -Isrc/

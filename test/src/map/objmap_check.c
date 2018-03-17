@@ -198,7 +198,7 @@ Suite * objmap_check(void) {
 
   s = suite_create("objmap");
 
-  tc = tcase_create("int->obj_t objmap");
+  tc = tcase_create("unnamed");
 
   // correct object handling
   tcase_add_test(tc, init_deinit);

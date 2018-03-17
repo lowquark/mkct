@@ -154,7 +154,9 @@ read -r -d '' OUTPUT << "EOF"
 #include <string.h>
 #include <assert.h>
 
+
 static const unsigned long initial_size = 32;
+
 
 void QUEUE_METHOD_INIT(QUEUE_TYPE * queue) {
   queue->buffer_begin = NULL;
