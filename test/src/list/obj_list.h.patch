@@ -1,0 +1,11 @@
+--- obj_list.h	2018-03-17 11:11:26.568511253 -0600
++++ obj_list.h.new	2018-03-17 11:12:00.278512276 -0600
+@@ -1,6 +1,8 @@
+ #ifndef _OBJ_LIST_H_
+ #define _OBJ_LIST_H_
+ 
++#include <obj.h>
++
+ /*
+  * obj_list.h / obj_list.c
+  *

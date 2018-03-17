@@ -113,6 +113,7 @@ s/LIST_METHOD_FIRST/${NAME}_first/g;\
 s/LIST_METHOD_LAST/${NAME}_last/g;\
 s/LIST_METHOD_NEXT/${NAME}_next/g;\
 s/LIST_METHOD_PREV/${NAME}_prev/g;\
+s/LIST_METHOD_VALUE/${NAME}_value/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 

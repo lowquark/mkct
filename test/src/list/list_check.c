@@ -70,7 +70,7 @@ START_TEST(iterate) {
   for(i = 0 ; i < 100 ; i ++) {
     ck_assert_ptr_nonnull(node);
 
-    ck_assert_int_eq(node->value, i);
+    ck_assert_int_eq(int_list_value(node), i);
 
     node = int_list_next(node);
   }
@@ -97,7 +97,7 @@ START_TEST(iterate_reverse) {
   for(i = 0 ; i < 100 ; i ++) {
     ck_assert_ptr_nonnull(node);
 
-    ck_assert_int_eq(node->value, i);
+    ck_assert_int_eq(int_list_value(node), i);
 
     node = int_list_prev(node);
   }
@@ -124,7 +124,7 @@ START_TEST(iterate_inverted) {
   for(i = 0 ; i < 100 ; i ++) {
     ck_assert_ptr_nonnull(node);
 
-    ck_assert_int_eq(node->value, 100 - (i + 1));
+    ck_assert_int_eq(int_list_value(node), 100 - (i + 1));
 
     node = int_list_next(node);
   }
@@ -149,7 +149,7 @@ START_TEST(erase_even) {
   int_list_node_t * node = int_list_first(&list);
 
   while(node) {
-    if((node->value % 2) == 0) {
+    if((int_list_value(node) % 2) == 0) {
       int_list_node_t * next = int_list_next(node);
       int_list_erase(node);
       node = next;
@@ -163,7 +163,7 @@ START_TEST(erase_even) {
   node = int_list_first(&list);
 
   while(node) {
-    ck_assert_int_eq(node->value, i * 2 + 1);
+    ck_assert_int_eq(int_list_value(node), i * 2 + 1);
 
     i ++;
     node = int_list_next(node);

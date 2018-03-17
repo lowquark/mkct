@@ -3,7 +3,7 @@
 set -u
 
 NAME=list
-VALUE_TYPE=int
+OBJECT_TYPE=int
 H_FILE=
 C_FILE=
 OUTPUT_TYPE='overview'
@@ -17,7 +17,7 @@ function print_usage() {
   print "Generate a circular, linked list implementation with the given type  "
   print "                                                                     "
   print "  --name=[NAME]            Set list name/prefix                      "
-  print "  --value-type=[TYPE]      Set type of values contained in the list  "
+  print "  --object-type=[TYPE]     Set type of objects contained in the list "
   print "                                                                     "
   print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
   print "                             Defaults to [NAME].h                    "
@@ -48,12 +48,12 @@ function fail_badusage() {
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --name=*)       NAME="${1#*=}";       shift 1 ;;
-    --value-type=*) VALUE_TYPE="${1#*=}"; shift 1 ;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1 ;;
 
     --header-file=*) H_FILE="${1#*=}"; shift 1 ;;
     --source-file=*) C_FILE="${1#*=}"; shift 1 ;;
 
-    --name|--value-type|--header-file|--source-file)
+    --name|--object-type|--header-file|--source-file)
       fail_badusage "$1 requires an argument" ;;
 
     --overview) OUTPUT_TYPE='overview'; shift 1 ;;
@@ -86,91 +86,96 @@ read -r -d '' OUTPUT << "EOF"
  *
  * Implements the following circular linked list structure:
  *
- *       list       node       node       node
- *     +-------+  +-------+  +-------+  +-------+
- *  +->| list  |->| list  |->| list  |->| list  |--+
- *  |  +-------+  + - - - +  + - - - +  + - - - +  |
- *  |             | value |  | value |  | value |  |
- *  |             +-------+  +-------+  +-------+  |
- *  +----------------------------------------------+
+ *        list       node       node       node
+ *     +--------+  +--------+  +--------+  +--------+
+ *  +->|  list  |->|  list  |->|  list  |->|  list  |--+
+ *  |  +--------+  + - -- - +  + - -- - +  + - -- - +  |
+ *  |              | object |  | object |  | object |  |
+ *  |              +--------+  +--------+  +--------+  |
+ *  +--------------------------------------------------+
  *
  */
 
-typedef struct LIST_STRUCT {
-  struct LIST_STRUCT * next;
-  struct LIST_STRUCT * prev;
-  struct LIST_STRUCT * head;
-} LIST_TYPE;
+typedef struct OBJLIST_STRUCT {
+  struct OBJLIST_STRUCT * next;
+  struct OBJLIST_STRUCT * prev;
+  struct OBJLIST_STRUCT * head;
+} OBJLIST_TYPE;
 
 typedef struct NODE_STRUCT {
-  LIST_TYPE list;
-  VALUE_TYPE value;
+  OBJLIST_TYPE list;
+  OBJECT_TYPE value;
 } NODE_TYPE;
 
 /*
  * Initializes the given list to a valid state.
  */
-void LIST_METHOD_INIT(LIST_TYPE * list);
+void OBJLIST_METHOD_INIT(OBJLIST_TYPE * list);
 
 /*
  * Deletes and removes all values present in the list.
  */
-void LIST_METHOD_CLEAR(LIST_TYPE * list);
+void OBJLIST_METHOD_CLEAR(OBJLIST_TYPE * list);
 
 /*
  * Deletes a single node and removes it from its list.
  */
-void LIST_METHOD_ERASE(NODE_TYPE * node);
+void OBJLIST_METHOD_ERASE(NODE_TYPE * node);
 
 /*
- * Creates a new node with value `value` and inserts it at the back of `list`.
+ * Creates a new object and places it at the back of `list`.
  *
  * Returns the new node.
  */
-NODE_TYPE * LIST_METHOD_PUSHBACK(LIST_TYPE * list, VALUE_TYPE value);
+NODE_TYPE * OBJLIST_METHOD_PUSHBACK(OBJLIST_TYPE * list);
 
 /*
- * Creates a new node with value `value` and inserts it at the front of `list`.
+ * Creates a new object and places it at the front of `list`.
  *
  * Returns the new node.
  */
-NODE_TYPE * LIST_METHOD_PUSHFRONT(LIST_TYPE * list, VALUE_TYPE value);
+NODE_TYPE * OBJLIST_METHOD_PUSHFRONT(OBJLIST_TYPE * list);
 
 /*
- * Creates a new node with value `value` and inserts it before `node`.
+ * Creates a new object and inserts it before `node`.
  *
  * Returns the new node.
  */
-NODE_TYPE * LIST_METHOD_INSERTBEFORE(NODE_TYPE * node, VALUE_TYPE value);
+NODE_TYPE * OBJLIST_METHOD_INSERTBEFORE(NODE_TYPE * node);
 
 /*
- * Creates a new node with value `value` and inserts it after `node`.
+ * Creates a new object and inserts it after `node`.
  *
  * Returns the new node.
  */
-NODE_TYPE * LIST_METHOD_INSERTAFTER(NODE_TYPE * node, VALUE_TYPE value);
+NODE_TYPE * OBJLIST_METHOD_INSERTAFTER(NODE_TYPE * node);
 
 /*
  * Returns the first node in the list. If the list is empty, returns NULL.
  */
-NODE_TYPE * LIST_METHOD_FIRST(const LIST_TYPE * list);
+NODE_TYPE * OBJLIST_METHOD_FIRST(const OBJLIST_TYPE * list);
 
 /*
  * Returns the last node in the list. If the list is empty, returns NULL.
  */
-NODE_TYPE * LIST_METHOD_LAST(const LIST_TYPE * list);
+NODE_TYPE * OBJLIST_METHOD_LAST(const OBJLIST_TYPE * list);
 
 /*
  * Returns the next node in the list after `node`. If `node` is the last node
  * in the list, returns NULL.
  */
-NODE_TYPE * LIST_METHOD_NEXT(const NODE_TYPE * node);
+NODE_TYPE * OBJLIST_METHOD_NEXT(const NODE_TYPE * node);
 
 /*
  * Returns the previous node in the list after `node`. If `node` is the first
  * node in the list, returns NULL.
  */
-NODE_TYPE * LIST_METHOD_PREV(const NODE_TYPE * node);
+NODE_TYPE * OBJLIST_METHOD_PREV(const NODE_TYPE * node);
+
+/*
+ * Returns the value of a given node.
+ */
+#define OBJLIST_METHOD_VALUE(_node_) (&((NODE_TYPE *)_node_)->value)
 
 #endif
 
@@ -185,15 +190,31 @@ read -r -d '' OUTPUT << "EOF"
 #include <stdlib.h>
 
 
-void LIST_METHOD_INIT(LIST_TYPE * l) {
+/*  ========  object functionaility  ========  */
+
+
+/* This function is called after an object's memory has been allocated. */
+static void object_init(OBJECT_TYPE * obj) {
+  memset(obj, 0, sizeof(OBJECT_TYPE));
+}
+
+/* This function is called before an object's memory is freed. */
+static void object_clear(OBJECT_TYPE * obj) {
+}
+
+
+/*  ========  general functionaility  ========  */
+
+
+void OBJLIST_METHOD_INIT(OBJLIST_TYPE * l) {
   l->next = l;
   l->prev = l;
   l->head = l;
 }
 
-void LIST_METHOD_CLEAR(LIST_TYPE * l) {
-  LIST_TYPE * l_iter;
-  LIST_TYPE * l_iter_next;
+void OBJLIST_METHOD_CLEAR(OBJLIST_TYPE * l) {
+  OBJLIST_TYPE * l_iter;
+  OBJLIST_TYPE * l_iter_next;
   NODE_TYPE * node;
 
   l_iter = l->next;
@@ -204,15 +225,16 @@ void LIST_METHOD_CLEAR(LIST_TYPE * l) {
     /* no offsetof *should* be necessary */
     node = (NODE_TYPE *)l_iter;
 
+    object_clear(&node->value);
     free(node);
 
     l_iter = l_iter_next;
   }
 
-  LIST_METHOD_INIT(l);
+  OBJLIST_METHOD_INIT(l);
 }
 
-void LIST_METHOD_ERASE(NODE_TYPE * node) {
+void OBJLIST_METHOD_ERASE(NODE_TYPE * node) {
   node->list.prev->next = node->list.next;
   node->list.next->prev = node->list.prev;
 
@@ -220,85 +242,90 @@ void LIST_METHOD_ERASE(NODE_TYPE * node) {
   node->list.prev = &node->list;
   node->list.head = &node->list;
 
+  object_clear(&node->value);
   free(node);
 }
 
-NODE_TYPE * LIST_METHOD_PUSHBACK(LIST_TYPE * l, VALUE_TYPE value) {
-  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
+NODE_TYPE * OBJLIST_METHOD_PUSHBACK(OBJLIST_TYPE * l) {
+  NODE_TYPE * newnode = malloc(sizeof(NODE_TYPE));
 
   if(newnode) {
+    object_init(&newnode->value);
+
     newnode->list.next       = l;
     newnode->list.prev       = l->prev;
     l->prev                  = &newnode->list;
     newnode->list.prev->next = &newnode->list;
     newnode->list.head       = l->head;
-    newnode->value = value;
   }
 
   return newnode;
 }
 
-NODE_TYPE * LIST_METHOD_PUSHFRONT(LIST_TYPE * l, VALUE_TYPE value) {
-  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
+NODE_TYPE * OBJLIST_METHOD_PUSHFRONT(OBJLIST_TYPE * l) {
+  NODE_TYPE * newnode = malloc(sizeof(NODE_TYPE));
 
   if(newnode) {
+    object_init(&newnode->value);
+
     newnode->list.prev       = l;
     newnode->list.next       = l->next;
     l->next                  = &newnode->list;
     newnode->list.next->prev = &newnode->list;
     newnode->list.head       = l->head;
-    newnode->value = value;
   }
 
   return newnode;
 }
 
-NODE_TYPE * LIST_METHOD_INSERTBEFORE(NODE_TYPE * node, VALUE_TYPE value) {
-  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
+NODE_TYPE * OBJLIST_METHOD_INSERTBEFORE(NODE_TYPE * node) {
+  NODE_TYPE * newnode = malloc(sizeof(NODE_TYPE));
 
   if(newnode) {
+    object_init(&newnode->value);
+
     newnode->list.next       = &node->list;
     newnode->list.prev       = node->list.prev;
        node->list.prev       = &newnode->list;
     newnode->list.prev->next = &newnode->list;
     newnode->list.head       = node->list.head;
-    newnode->value           = value;
   }
 
   return newnode;
 }
 
-NODE_TYPE * LIST_METHOD_INSERTAFTER(NODE_TYPE * node, VALUE_TYPE value) {
-  NODE_TYPE * newnode = calloc(sizeof(NODE_TYPE), 1);
+NODE_TYPE * OBJLIST_METHOD_INSERTAFTER(NODE_TYPE * node) {
+  NODE_TYPE * newnode = malloc(sizeof(NODE_TYPE));
 
   if(newnode) {
+    object_init(&newnode->value);
+
     newnode->list.prev       = &node->list;
     newnode->list.next       = node->list.next;
        node->list.next       = &newnode->list;
     newnode->list.next->prev = &newnode->list;
     newnode->list.head       = node->list.head;
-    newnode->value           = value;
   }
 
   return newnode;
 }
 
-NODE_TYPE * LIST_METHOD_FIRST(const LIST_TYPE * l) {
+NODE_TYPE * OBJLIST_METHOD_FIRST(const OBJLIST_TYPE * l) {
   if(l->next == l) { return 0; }
   return (NODE_TYPE *)l->next;
 }
 
-NODE_TYPE * LIST_METHOD_LAST(const LIST_TYPE * l) {
+NODE_TYPE * OBJLIST_METHOD_LAST(const OBJLIST_TYPE * l) {
   if(l->prev == l) { return 0; }
   return (NODE_TYPE *)l->prev;
 }
 
-NODE_TYPE * LIST_METHOD_NEXT(const NODE_TYPE * l) {
+NODE_TYPE * OBJLIST_METHOD_NEXT(const NODE_TYPE * l) {
   if(l->list.next == l->list.head) { return 0; }
   return (NODE_TYPE *)l->list.next;
 }
 
-NODE_TYPE * LIST_METHOD_PREV(const NODE_TYPE * l) {
+NODE_TYPE * OBJLIST_METHOD_PREV(const NODE_TYPE * l) {
   if(l->list.prev == l->list.head) { return 0; }
   return (NODE_TYPE *)l->list.prev;
 }
@@ -317,22 +344,23 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
-s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/LIST_STRUCT/${NAME}/g;\
-s/LIST_TYPE/${NAME}_t/g;\
+s/OBJECT_TYPE/${OBJECT_TYPE}/g;\
+s/OBJLIST_STRUCT/${NAME}/g;\
+s/OBJLIST_TYPE/${NAME}_t/g;\
 s/NODE_STRUCT/${NAME}_node/g;\
 s/NODE_TYPE/${NAME}_node_t/g;\
-s/LIST_METHOD_INIT/${NAME}_init/g;\
-s/LIST_METHOD_CLEAR/${NAME}_clear/g;\
-s/LIST_METHOD_ERASE/${NAME}_erase/g;\
-s/LIST_METHOD_PUSHBACK/${NAME}_pushback/g;\
-s/LIST_METHOD_PUSHFRONT/${NAME}_pushfront/g;\
-s/LIST_METHOD_INSERTBEFORE/${NAME}_insertbefore/g;\
-s/LIST_METHOD_INSERTAFTER/${NAME}_insertafter/g;\
-s/LIST_METHOD_FIRST/${NAME}_first/g;\
-s/LIST_METHOD_LAST/${NAME}_last/g;\
-s/LIST_METHOD_NEXT/${NAME}_next/g;\
-s/LIST_METHOD_PREV/${NAME}_prev/g;\
+s/OBJLIST_METHOD_INIT/${NAME}_init/g;\
+s/OBJLIST_METHOD_CLEAR/${NAME}_clear/g;\
+s/OBJLIST_METHOD_ERASE/${NAME}_erase/g;\
+s/OBJLIST_METHOD_PUSHBACK/${NAME}_pushback/g;\
+s/OBJLIST_METHOD_PUSHFRONT/${NAME}_pushfront/g;\
+s/OBJLIST_METHOD_INSERTBEFORE/${NAME}_insertbefore/g;\
+s/OBJLIST_METHOD_INSERTAFTER/${NAME}_insertafter/g;\
+s/OBJLIST_METHOD_FIRST/${NAME}_first/g;\
+s/OBJLIST_METHOD_LAST/${NAME}_last/g;\
+s/OBJLIST_METHOD_NEXT/${NAME}_next/g;\
+s/OBJLIST_METHOD_PREV/${NAME}_prev/g;\
+s/OBJLIST_METHOD_VALUE/${NAME}_value/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 

@@ -4,7 +4,7 @@
 typedef unsigned long SIZE_TYPE;
 
 /*
- * FIFO stack of `OBJECT_TYPE`s. Grows dynamically, and manages object
+ * FILO stack of `OBJECT_TYPE`s. Grows dynamically, and manages object
  * initialization / allocation.
  */
 typedef struct OBJSTACK_STRUCT {

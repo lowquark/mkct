@@ -29,6 +29,7 @@ OBJECTS += src/map/objmap_check.o
 OBJECTS += src/list/int_list.o
 OBJECTS += src/list/obj_list.o
 OBJECTS += src/list/list_check.o
+OBJECTS += src/list/objlist_check.o
 
 OBJECTS += src/obj.o
 OBJECTS += src/check_all.o
@@ -86,9 +87,11 @@ src/list/int_list.h:
 src/list/int_list.c:
 	$(MKCT_LIST) --value-type=int --name=int_list --source > src/list/int_list.c
 src/list/obj_list.h:
-	$(MKCT_OBJLIST) --value-type=int --name=obj_list --header > src/list/obj_list.h
+	$(MKCT_OBJLIST) --object-type=obj_t --name=obj_list --header > src/list/obj_list.h
+	patch -d src/list/ < $@.patch
 src/list/obj_list.c:
-	$(MKCT_OBJLIST) --value-type=int --name=obj_list --source > src/list/obj_list.c
+	$(MKCT_OBJLIST) --object-type=obj_t --name=obj_list --source > src/list/obj_list.c
+	patch -d src/list/ < $@.patch
 
 #### map ####
 src/map/int_int_map.h:
