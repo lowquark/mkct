@@ -1,33 +1,28 @@
 
-h_file           : H_FILE
+Files:
+  H_FILE
+  C_FILE
 
-c_file           : C_FILE
+Description:
+  Implements a lineraly-probed hash map from `KEY_TYPE` to `VALUE_TYPE`.
 
-include_guard    : INCLUDE_GUARD
+  Values are passed by copy - no value initialization or allocation is
+  performed. Existing values are overwritten by new ones.
 
-key_type         : KEY_TYPE
+  A stub for hashing keys can be found in the generated source. More detailed
+  documentation can be found in the generated header.
 
-value_type       : VALUE_TYPE
+Types:
+  Map object                 : MAP_TYPE
+  Map entry type (unexposed) : ENTRY_TYPE
+  Key type                   : KEY_TYPE
+  Value type                 : VALUE_TYPE
 
-map_struct       : MAP_STRUCT
-
-map_type         : MAP_TYPE
-
-entry_struct     : ENTRY_STRUCT
-
-entry_type       : ENTRY_TYPE
-
-map_method_init  : MAP_METHOD_INIT
-
-map_method_clear : MAP_METHOD_CLEAR
-
-map_method_get   : MAP_METHOD_GET
-
-map_method_set   : MAP_METHOD_SET
-
-map_method_erase : MAP_METHOD_ERASE
-
-map_method_has   : MAP_METHOD_HAS
-
-map_method_size  : MAP_METHOD_SIZE
+API:
+  Initialize a map object : MAP_METHOD_INIT  (MAP_TYPE * map)
+  Erase all entries       : MAP_METHOD_CLEAR (MAP_TYPE * map)
+  Retrieve an entry       : MAP_METHOD_GET   (MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE * value_out) -> int (success/failure)
+  Set an entry            : MAP_METHOD_SET   (MAP_TYPE * map, KEY_TYPE key, VALUE_TYPE value) -> int (success/failure)
+  Check for an entry      : MAP_METHOD_HAS   (MAP_TYPE * map, KEY_TYPE key) -> int (success/failure)
+  Erase an entry          : MAP_METHOD_ERASE (MAP_TYPE * map, KEY_TYPE key) -> int (success/failure)
 
