@@ -6,7 +6,7 @@
  *
  * Implements the following circular linked list structure:
  *
- *        list       node       node       node
+ *        list        node        node        node
  *     +--------+  +--------+  +--------+  +--------+
  *  +->|  list  |->|  list  |->|  list  |->|  list  |--+
  *  |  +--------+  + - -- - +  + - -- - +  + - -- - +  |
@@ -95,6 +95,6 @@ NODE_TYPE * OBJLIST_METHOD_PREV(const NODE_TYPE * node);
 /*
  * Returns the value of a given node.
  */
-#define OBJLIST_METHOD_VALUE(_node_) (&((NODE_TYPE *)_node_)->value)
+#define OBJLIST_METHOD_VALUE(_node_) ((OBJECT_TYPE *)&((const NODE_TYPE *)_node_)->value)
 
 #endif

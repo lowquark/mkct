@@ -6,13 +6,13 @@
  *
  * Implements the following circular linked list structure:
  *
- *       list       node       node       node
- *     +-------+  +-------+  +-------+  +-------+
- *  +->| list  |->| list  |->| list  |->| list  |--+
- *  |  +-------+  + - - - +  + - - - +  + - - - +  |
- *  |             | value |  | value |  | value |  |
- *  |             +-------+  +-------+  +-------+  |
- *  +----------------------------------------------+
+ *       list        node        node        node
+ *     +-------+   +-------+   +-------+   +-------+
+ *  +->| list  |<->| list  |<->| list  |<->| list  |<-+
+ *  |  +-------+   + - - - +   + - - - +   + - - - +  |
+ *  |              | value |   | value |   | value |  |
+ *  |              +-------+   +-------+   +-------+  |
+ *  +-------------------------------------------------+
  *
  */
 
@@ -95,6 +95,6 @@ NODE_TYPE * LIST_METHOD_PREV(const NODE_TYPE * node);
 /*
  * Returns the value of a given node
  */
-#define LIST_METHOD_VALUE(_node_) (((const NODE_TYPE *)_node_)->value)
+#define LIST_METHOD_VALUE(_node_) ((VALUE_TYPE)((const NODE_TYPE *)_node_)->value)
 
 #endif
