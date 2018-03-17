@@ -1,0 +1,16 @@
+--- obj_stack.c	2018-03-16 23:12:13.145369494 -0600
++++ obj_stack.c.new	2018-03-16 23:13:13.655371332 -0600
+@@ -10,11 +10,12 @@
+ 
+ /* This function is called after an object's memory has been allocated. */
+ static void object_init(obj_t * obj) {
+-  memset(obj, 0, sizeof(obj_t));
++  obj_init(obj);
+ }
+ 
+ /* This function is called before an object's memory is freed. */
+ static void object_clear(obj_t * obj) {
++  obj_clear(obj);
+ }
+ 
+ 

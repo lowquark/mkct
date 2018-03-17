@@ -66,6 +66,8 @@ START_TEST(unique_values) {
     }
   }
 
+  free(objs);
+
   int_obj_map_clear(&map);
 }
 END_TEST

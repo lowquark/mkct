@@ -48,7 +48,7 @@ START_TEST(push_pop) {
     for(int i = 0 ; i < N ; i ++) {
       /* should match what we saved */
       ck_assert_ptr_eq(obj_queue_peek(&queue), objects[i]);
-      /* should been popped */
+      /* popping should work */
       ck_assert_int_eq(obj_queue_pop(&queue), 1);
       /* this many objects should exist */
       ck_assert_int_eq(obj_num(), N - i - 1);

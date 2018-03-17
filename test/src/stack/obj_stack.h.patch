@@ -1,0 +1,11 @@
+--- obj_stack.h	2018-03-16 23:12:13.122036160 -0600
++++ obj_stack.h.new	2018-03-16 23:13:04.252037712 -0600
+@@ -1,6 +1,8 @@
+ #ifndef _OBJ_STACK_H_
+ #define _OBJ_STACK_H_
+ 
++#include <obj.h>
++
+ typedef unsigned long obj_stack_size_t;
+ 
+ /*

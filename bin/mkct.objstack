@@ -3,7 +3,7 @@
 set -u
 
 NAME=stack
-VALUE_TYPE=int
+OBJECT_TYPE=int
 H_FILE=
 C_FILE=
 OUTPUT_TYPE='overview'
@@ -13,23 +13,23 @@ function print() {
 }
 
 function print_usage() {
-  print "Usage: mkct.stack [OPTIONS]...                                       "
-  print "Generate a dynamically-sized stack implementation with the given type"
-  print "                                                                     "
-  print "  --name=[NAME]            Set stack name/prefix                     "
-  print "  --value-type=[TYPE]      Set type of values contained in the stack "
-  print "                                                                     "
-  print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
-  print "                             Defaults to [NAME].h                    "
-  print "  --source-file=[FILENAME] Set source file to [FILENAME]             "
-  print "                             Defaults to [NAME].c                    "
-  print "                                                                     "
-  print "  --overview               Output API/Overview   (default)           "
-  print "  --header                 Output C header file                      "
-  print "  --source                 Output C source file                      "
-  print "                                                                     "
-  print "  -h,--help                Show this usage and exit                  "
-  print "                                                                     "
+  print "Usage: mkct.stack [OPTIONS]...                                        "
+  print "Generate a dynamically-sized stack implementation with the given type "
+  print "                                                                      "
+  print "  --name=[NAME]            Set stack name/prefix                      "
+  print "  --object-type=[TYPE]      Set type of objects contained in the stack"
+  print "                                                                      "
+  print "  --header-file=[FILENAME] Set header file to [FILENAME]              "
+  print "                             Defaults to [NAME].h                     "
+  print "  --source-file=[FILENAME] Set source file to [FILENAME]              "
+  print "                             Defaults to [NAME].c                     "
+  print "                                                                      "
+  print "  --overview               Output API/Overview   (default)            "
+  print "  --header                 Output C header file                       "
+  print "  --source                 Output C source file                       "
+  print "                                                                      "
+  print "  -h,--help                Show this usage and exit                   "
+  print "                                                                      "
 }
 
 function fail() {
@@ -48,12 +48,12 @@ function fail_badusage() {
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --name=*)       NAME="${1#*=}";       shift 1 ;;
-    --value-type=*) VALUE_TYPE="${1#*=}"; shift 1 ;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1 ;;
 
     --header-file=*) H_FILE="${1#*=}"; shift 1 ;;
     --source-file=*) C_FILE="${1#*=}"; shift 1 ;;
 
-    --name|--value-type|--header-file|--source-file)
+    --name|--object-type|--header-file|--source-file)
       fail_badusage "$1 requires an argument" ;;
 
     --overview) OUTPUT_TYPE='overview'; shift 1 ;;
@@ -84,61 +84,60 @@ read -r -d '' OUTPUT << "EOF"
 typedef unsigned long SIZE_TYPE;
 
 /*
- * FILO stack of `VALUE_TYPE`s. Values are copied, not referenced.
+ * FIFO stack of `OBJECT_TYPE`s. Grows dynamically, and manages object
+ * initialization / allocation.
  */
-typedef struct STACK_STRUCT {
-  VALUE_TYPE * buffer_begin;
-  VALUE_TYPE * buffer_end;
-  VALUE_TYPE * putptr;
+typedef struct OBJSTACK_STRUCT {
+  OBJECT_TYPE ** buffer_begin;
+  OBJECT_TYPE ** buffer_end;
+  OBJECT_TYPE ** putptr;
   SIZE_TYPE size;
-} STACK_TYPE;
+} OBJSTACK_TYPE;
 
 /*
- * Initializes the given `STACK_TYPE` to a valid, empty state.
+ * Initializes the stack object to a valid, empty state.
  *
- * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to pop all values
- * from the stack.
+ * Warning: No memory will be freed. Use OBJQUEUE_METHOD_CLEAR to clear an
+ * initialized stack.
  */
-void STACK_METHOD_INIT(STACK_TYPE * stack);
+void OBJSTACK_METHOD_INIT(OBJSTACK_TYPE * stack);
 
 /*
- * Pops all values present in the stack, and frees all allocated memory it
- * owns.
+ * Pops all values present in the stack. Frees all allocated memory.
  */
-void STACK_METHOD_CLEAR(STACK_TYPE * stack);
+void OBJSTACK_METHOD_CLEAR(OBJSTACK_TYPE * stack);
 
 /*
- * Pushes the given value onto the top of the stack, reallocating buffer space
- * if necessary. Returns 1 if successful, and 0 otherwise.
+ * Creates a new object and places it at the top of the stack.
+ * Returns NULL upon memory allocation failure.
  */
-int STACK_METHOD_PUSH(STACK_TYPE * stack, VALUE_TYPE value);
+OBJECT_TYPE * OBJSTACK_METHOD_PUSH(OBJSTACK_TYPE * stack);
 
 /*
- * If the stack is non-empty, pops (erases) its top value and returns 1.
- * Otherwise, returns 0.
+ * Destroys and removes the object at the top of the stack. Does nothing if
+ * the stack is empty. Returns whether an element was popped.
  */
-int STACK_METHOD_POP(STACK_TYPE * stack);
+int OBJSTACK_METHOD_POP(OBJSTACK_TYPE * stack);
 
 /*
- * If the stack is non-empty, stores its top value into `*value_out` and returns 1.
- * Otherwise, leaves `*value_out` unmodified and returns 0.
+ * Returns the element at the top of the stack, or NULL if the stack is empty.
  */
-int STACK_METHOD_TOP(STACK_TYPE * stack, VALUE_TYPE * value_out);
+OBJECT_TYPE * OBJSTACK_METHOD_PEEK(OBJSTACK_TYPE * stack);
 
 /*
- * If a value exists at the given stack index, stores its value in `*value_out` and returns 1
- * Otherwise, leaves `*value_out` unmodified and returns 0.
+ * If an object exists at the given stack index, returns it
+ * Otherwise, returns NULL.
  *
  * Note:
- *   An index of 0 is the front of the stack. The top of the stack is indexed
+ *   An index of 0 is the bottom of the stack. The top of the stack is indexed
  *   by the stack's size minus one.
  */
-int STACK_METHOD_AT(STACK_TYPE * stack, VALUE_TYPE * value_out, SIZE_TYPE idx);
+OBJECT_TYPE * OBJSTACK_METHOD_AT(OBJSTACK_TYPE * stack, SIZE_TYPE idx);
 
 /*
- * Returns the number of elements in the stack
+ * Returns the number of elements in the stack.
  */
-#define STACK_METHOD_SIZE(_stack_) (((const STACK_TYPE *)_stack_)->size)
+#define OBJSTACK_METHOD_SIZE(_stack_) (((const OBJSTACK_TYPE *)_stack_)->size)
 
 #endif
 
@@ -154,34 +153,63 @@ read -r -d '' OUTPUT << "EOF"
 #include <assert.h>
 
 
+/*  ========  object functionaility  ========  */
+
+
+/* This function is called after an object's memory has been allocated. */
+static void object_init(OBJECT_TYPE * obj) {
+  memset(obj, 0, sizeof(OBJECT_TYPE));
+}
+
+/* This function is called before an object's memory is freed. */
+static void object_clear(OBJECT_TYPE * obj) {
+}
+
+
+/*  ========  general functionaility  ========  */
+
+
 static const unsigned long initial_size = 32;
 
 
-void STACK_METHOD_INIT(STACK_TYPE * stack) {
+void OBJSTACK_METHOD_INIT(OBJSTACK_TYPE * stack) {
   stack->buffer_begin = NULL;
   stack->buffer_end   = NULL;
   stack->putptr = NULL;
   stack->size = 0;
 }
 
-void STACK_METHOD_CLEAR(STACK_TYPE * stack) {
+void OBJSTACK_METHOD_CLEAR(OBJSTACK_TYPE * stack) {
+  OBJECT_TYPE ** valptr;
+
+  /* iterate over [0, putptr), call clear and free */
+  if(stack->size) {
+    for(valptr = stack->buffer_begin ;
+        valptr != stack->putptr ;
+        valptr ++) {
+      object_clear(*valptr);
+      free(*valptr);
+    }
+  }
+
   /* free the buffer (may be NULL) */
   free(stack->buffer_begin);
 
   /* clean slate */
-  STACK_METHOD_INIT(stack);
+  OBJSTACK_METHOD_INIT(stack);
 }
 
-int STACK_METHOD_PUSH(STACK_TYPE * stack, VALUE_TYPE value) {
-  VALUE_TYPE * new_buffer_begin;
+OBJECT_TYPE * OBJSTACK_METHOD_PUSH(OBJSTACK_TYPE * stack) {
+  OBJECT_TYPE * new_object;
+  OBJECT_TYPE ** new_buffer_begin;
   SIZE_TYPE new_buffer_size;
 
   if(!stack->buffer_begin) {
     /* this buffer has not been allocated */
-    stack->buffer_begin = malloc(initial_size*sizeof(VALUE_TYPE));
+    stack->buffer_begin = malloc(initial_size*sizeof(OBJECT_TYPE *));
 
     /* couldn't alloc, escape before anything breaks */
-    if(!stack->buffer_begin) { return 0; }
+    if(!stack->buffer_begin) { return NULL; }
 
     stack->buffer_end = stack->buffer_begin + initial_size;
     stack->putptr     = stack->buffer_begin;
@@ -192,32 +220,42 @@ int STACK_METHOD_PUSH(STACK_TYPE * stack, VALUE_TYPE value) {
     new_buffer_size = 2*stack->size;
 
     /* realloc twice as large */
-    new_buffer_begin = realloc(stack->buffer_begin, new_buffer_size*sizeof(VALUE_TYPE));
+    new_buffer_begin = realloc(stack->buffer_begin, new_buffer_size*sizeof(OBJECT_TYPE *));
 
     /* couldn't realloc, escape before anything breaks */
-    if(!new_buffer_begin) { return 0; }
+    if(!new_buffer_begin) { return NULL; }
 
     stack->buffer_begin = new_buffer_begin;
     stack->buffer_end   = new_buffer_begin + new_buffer_size;
     stack->putptr       = new_buffer_begin + stack->size;
   }
 
+  /* allocate + initialize */
+  new_object = malloc(sizeof(OBJECT_TYPE));
+
+  object_init(new_object);
+
   /* store at put pointer and advance */
-  *stack->putptr++ = value;
+  *stack->putptr++ = new_object;
 
   /* keep track of size */
   stack->size ++;
 
-  return 1;
+  return new_object;
 }
 
-int STACK_METHOD_POP(STACK_TYPE * stack) {
+int OBJSTACK_METHOD_POP(OBJSTACK_TYPE * stack) {
   /* If unallocated, but initialized, this won't try to pop, assuming
    * (stack->putptr == stack->buffer_end)
    */
 
   if(stack->putptr > stack->buffer_begin) {
     stack->putptr --;
+
+    /* deinitialize + deallocate */
+    object_clear(*stack->putptr);
+    free(*stack->putptr);
+
     stack->size --;
 
     return 1;
@@ -226,7 +264,7 @@ int STACK_METHOD_POP(STACK_TYPE * stack) {
   }
 }
 
-int STACK_METHOD_TOP(STACK_TYPE * stack, VALUE_TYPE * value_out) {
+OBJECT_TYPE * OBJSTACK_METHOD_PEEK(OBJSTACK_TYPE * stack) {
   /* If unallocated, but initialized, this will return 0, assuming
    * (stack->putptr == stack->buffer_begin)
    *
@@ -235,25 +273,23 @@ int STACK_METHOD_TOP(STACK_TYPE * stack, VALUE_TYPE * value_out) {
    */
 
   if(stack->putptr > stack->buffer_begin) {
-    *value_out = *(stack->putptr - 1);
-    return 1;
+    return *(stack->putptr - 1);
   } else {
-    return 0;
+    return NULL;
   }
 }
 
-int STACK_METHOD_AT(STACK_TYPE * stack, VALUE_TYPE * value_out, SIZE_TYPE idx) {
+OBJECT_TYPE * OBJSTACK_METHOD_AT(OBJSTACK_TYPE * stack, SIZE_TYPE idx) {
   /* If unallocated, but initialized, this will return 0, assuming
    * (stack->putptr == 0)
    */
 
-  VALUE_TYPE * slot = stack->buffer_begin + idx;
+  OBJECT_TYPE ** slot = stack->buffer_begin + idx;
 
   if(slot < stack->buffer_begin || slot >= stack->putptr) {
-    return 0;
+    return NULL;
   } else {
-    *value_out = *slot;
-    return 1;
+    return *slot;
   }
 }
 
@@ -271,17 +307,17 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
-s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/STACK_STRUCT/${NAME}/g;\
-s/STACK_TYPE/${NAME}_t/g;\
+s/OBJECT_TYPE/${OBJECT_TYPE}/g;\
+s/OBJSTACK_STRUCT/${NAME}/g;\
+s/OBJSTACK_TYPE/${NAME}_t/g;\
 s/SIZE_TYPE/${NAME}_size_t/g;\
-s/STACK_METHOD_INIT/${NAME}_init/g;\
-s/STACK_METHOD_CLEAR/${NAME}_clear/g;\
-s/STACK_METHOD_PUSH/${NAME}_push/g;\
-s/STACK_METHOD_POP/${NAME}_pop/g;\
-s/STACK_METHOD_TOP/${NAME}_top/g;\
-s/STACK_METHOD_AT/${NAME}_at/g;\
-s/STACK_METHOD_SIZE/${NAME}_size/g;\
+s/OBJSTACK_METHOD_INIT/${NAME}_init/g;\
+s/OBJSTACK_METHOD_CLEAR/${NAME}_clear/g;\
+s/OBJSTACK_METHOD_PUSH/${NAME}_push/g;\
+s/OBJSTACK_METHOD_POP/${NAME}_pop/g;\
+s/OBJSTACK_METHOD_PEEK/${NAME}_peek/g;\
+s/OBJSTACK_METHOD_AT/${NAME}_at/g;\
+s/OBJSTACK_METHOD_SIZE/${NAME}_size/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 

@@ -14,6 +14,7 @@ MKCT_OBJMAP   = $(BINDIR)mkct.objmap
 OBJECTS += src/stack/int_stack.o
 OBJECTS += src/stack/obj_stack.o
 OBJECTS += src/stack/stack_check.o
+OBJECTS += src/stack/objstack_check.o
 
 OBJECTS += src/queue/int_queue.o
 OBJECTS += src/queue/obj_queue.o
@@ -61,9 +62,11 @@ src/stack/int_stack.h:
 src/stack/int_stack.c:
 	$(MKCT_STACK) --value-type=int --name=int_stack --source > src/stack/int_stack.c
 src/stack/obj_stack.h:
-	$(MKCT_OBJSTACK) --value-type=int --name=obj_stack --header > src/stack/obj_stack.h
+	$(MKCT_OBJSTACK) --object-type=obj_t --name=obj_stack --header > src/stack/obj_stack.h
+	patch -d src/stack/ < $@.patch
 src/stack/obj_stack.c:
-	$(MKCT_OBJSTACK) --value-type=int --name=obj_stack --source > src/stack/obj_stack.c
+	$(MKCT_OBJSTACK) --object-type=obj_t --name=obj_stack --source > src/stack/obj_stack.c
+	patch -d src/stack/ < $@.patch
 
 #### queue ####
 src/queue/int_queue.h:

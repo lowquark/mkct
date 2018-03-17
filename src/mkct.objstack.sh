@@ -3,7 +3,7 @@
 set -u
 
 NAME=stack
-VALUE_TYPE=int
+OBJECT_TYPE=int
 H_FILE=
 C_FILE=
 OUTPUT_TYPE='overview'
@@ -13,23 +13,23 @@ function print() {
 }
 
 function print_usage() {
-  print "Usage: mkct.stack [OPTIONS]...                                       "
-  print "Generate a dynamically-sized stack implementation with the given type"
-  print "                                                                     "
-  print "  --name=[NAME]            Set stack name/prefix                     "
-  print "  --value-type=[TYPE]      Set type of values contained in the stack "
-  print "                                                                     "
-  print "  --header-file=[FILENAME] Set header file to [FILENAME]             "
-  print "                             Defaults to [NAME].h                    "
-  print "  --source-file=[FILENAME] Set source file to [FILENAME]             "
-  print "                             Defaults to [NAME].c                    "
-  print "                                                                     "
-  print "  --overview               Output API/Overview   (default)           "
-  print "  --header                 Output C header file                      "
-  print "  --source                 Output C source file                      "
-  print "                                                                     "
-  print "  -h,--help                Show this usage and exit                  "
-  print "                                                                     "
+  print "Usage: mkct.stack [OPTIONS]...                                        "
+  print "Generate a dynamically-sized stack implementation with the given type "
+  print "                                                                      "
+  print "  --name=[NAME]            Set stack name/prefix                      "
+  print "  --object-type=[TYPE]      Set type of objects contained in the stack"
+  print "                                                                      "
+  print "  --header-file=[FILENAME] Set header file to [FILENAME]              "
+  print "                             Defaults to [NAME].h                     "
+  print "  --source-file=[FILENAME] Set source file to [FILENAME]              "
+  print "                             Defaults to [NAME].c                     "
+  print "                                                                      "
+  print "  --overview               Output API/Overview   (default)            "
+  print "  --header                 Output C header file                       "
+  print "  --source                 Output C source file                       "
+  print "                                                                      "
+  print "  -h,--help                Show this usage and exit                   "
+  print "                                                                      "
 }
 
 function fail() {
@@ -48,12 +48,12 @@ function fail_badusage() {
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --name=*)       NAME="${1#*=}";       shift 1 ;;
-    --value-type=*) VALUE_TYPE="${1#*=}"; shift 1 ;;
+    --object-type=*) OBJECT_TYPE="${1#*=}"; shift 1 ;;
 
     --header-file=*) H_FILE="${1#*=}"; shift 1 ;;
     --source-file=*) C_FILE="${1#*=}"; shift 1 ;;
 
-    --name|--value-type|--header-file|--source-file)
+    --name|--object-type|--header-file|--source-file)
       fail_badusage "$1 requires an argument" ;;
 
     --overview) OUTPUT_TYPE='overview'; shift 1 ;;
@@ -73,17 +73,17 @@ if [ -z $C_FILE ]; then C_FILE="$NAME.c"; fi
 case "$OUTPUT_TYPE" in
   overview)
 read -r -d '' OUTPUT << "EOF"
-{{stack.overview.h}}
+{{objstack.overview.h}}
 EOF
     ;;
   header)
 read -r -d '' OUTPUT << "EOF"
-{{stack.h}}
+{{objstack.h}}
 EOF
     ;;
   source)
 read -r -d '' OUTPUT << "EOF"
-{{stack.c}}
+{{objstack.c}}
 EOF
     ;;
   *)
@@ -97,17 +97,17 @@ INCLUDE_GUARD="${INCLUDE_GUARD^^}"
 
 REPLACE="\
 s/INCLUDE_GUARD/${INCLUDE_GUARD}/g;\
-s/VALUE_TYPE/${VALUE_TYPE}/g;\
-s/STACK_STRUCT/${NAME}/g;\
-s/STACK_TYPE/${NAME}_t/g;\
+s/OBJECT_TYPE/${OBJECT_TYPE}/g;\
+s/OBJSTACK_STRUCT/${NAME}/g;\
+s/OBJSTACK_TYPE/${NAME}_t/g;\
 s/SIZE_TYPE/${NAME}_size_t/g;\
-s/STACK_METHOD_INIT/${NAME}_init/g;\
-s/STACK_METHOD_CLEAR/${NAME}_clear/g;\
-s/STACK_METHOD_PUSH/${NAME}_push/g;\
-s/STACK_METHOD_POP/${NAME}_pop/g;\
-s/STACK_METHOD_TOP/${NAME}_top/g;\
-s/STACK_METHOD_AT/${NAME}_at/g;\
-s/STACK_METHOD_SIZE/${NAME}_size/g;\
+s/OBJSTACK_METHOD_INIT/${NAME}_init/g;\
+s/OBJSTACK_METHOD_CLEAR/${NAME}_clear/g;\
+s/OBJSTACK_METHOD_PUSH/${NAME}_push/g;\
+s/OBJSTACK_METHOD_POP/${NAME}_pop/g;\
+s/OBJSTACK_METHOD_PEEK/${NAME}_peek/g;\
+s/OBJSTACK_METHOD_AT/${NAME}_at/g;\
+s/OBJSTACK_METHOD_SIZE/${NAME}_size/g;\
 s/H_FILE/${H_FILE////\\/}/g;\
 s/C_FILE/${C_FILE////\\/}/g"
 
