@@ -1,10 +1,12 @@
 #include "obj_stack.h"
 
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
 
-#define INITIAL_SIZE 32
+
+static const unsigned long initial_size = 32;
+
 
 void obj_stack_init(obj_stack_t * stack) {
   stack->buffer_begin = NULL;
@@ -27,12 +29,12 @@ int obj_stack_push(obj_stack_t * stack, int value) {
 
   if(!stack->buffer_begin) {
     /* this buffer has not been allocated */
-    stack->buffer_begin = malloc(INITIAL_SIZE*sizeof(int));
+    stack->buffer_begin = malloc(initial_size*sizeof(int));
 
     /* couldn't alloc, escape before anything breaks */
     if(!stack->buffer_begin) { return 0; }
 
-    stack->buffer_end = stack->buffer_begin + INITIAL_SIZE;
+    stack->buffer_end = stack->buffer_begin + initial_size;
     stack->putptr     = stack->buffer_begin;
   } else if(stack->putptr == stack->buffer_end) {
     /* full buffer condition */

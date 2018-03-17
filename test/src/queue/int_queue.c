@@ -1,50 +1,50 @@
 #include "int_queue.h"
 
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
 
-#define INITIAL_SIZE 32
+static const unsigned long initial_size = 32;
 
-void int_queue_init(int_queue_t * q) {
-  q->buffer_begin = NULL;
-  q->buffer_end = NULL;
-  q->getptr = NULL;
-  q->putptr = NULL;
-  q->size = 0;
+void int_queue_init(int_queue_t * queue) {
+  queue->buffer_begin = NULL;
+  queue->buffer_end = NULL;
+  queue->getptr = NULL;
+  queue->putptr = NULL;
+  queue->size = 0;
 }
 
-void int_queue_clear(int_queue_t * q) {
+void int_queue_clear(int_queue_t * queue) {
   /* free the buffer (may be NULL) */
-  free(q->buffer_begin);
+  free(queue->buffer_begin);
 
   /* clean slate */
-  int_queue_init(q);
+  int_queue_init(queue);
 }
 
-int int_queue_push(int_queue_t * q, int value) {
+int int_queue_push(int_queue_t * queue, int value) {
   int * new_buffer_begin;
   int * wrap_point;
   long new_buffer_size;
 
-  if(!q->buffer_begin) {
+  if(!queue->buffer_begin) {
     /* this buffer is null */
-    q->buffer_begin = malloc(INITIAL_SIZE*sizeof(int));
+    queue->buffer_begin = malloc(initial_size*sizeof(int));
 
     /* couldn't alloc, escape before anything breaks */
-    if(!q->buffer_begin) { return 0; }
+    if(!queue->buffer_begin) { return 0; }
 
-    q->buffer_end   = q->buffer_begin + INITIAL_SIZE;
-    q->getptr       = q->buffer_begin;
-    q->putptr       = q->buffer_begin;
-  } else if(q->getptr == q->putptr && q->size != 0) {
+    queue->buffer_end   = queue->buffer_begin + initial_size;
+    queue->getptr       = queue->buffer_begin;
+    queue->putptr       = queue->buffer_begin;
+  } else if(queue->getptr == queue->putptr && queue->size != 0) {
     /* full buffer condition */
 
     /* sanity check */
-    assert(q->buffer_end - q->buffer_begin == q->size);
+    assert(queue->buffer_end - queue->buffer_begin == queue->size);
 
     /* double previous buffer size */
-    new_buffer_size = 2*q->size;
+    new_buffer_size = 2*queue->size;
 
     /* alloc new buffer twice as large */
     new_buffer_begin = malloc(new_buffer_size*sizeof(int));
@@ -53,73 +53,73 @@ int int_queue_push(int_queue_t * q, int value) {
     if(!new_buffer_begin) { return 0; }
 
     /* pointer within new_buffer where buffer_end lines up with */
-    wrap_point = new_buffer_begin + (q->buffer_end - q->putptr);
+    wrap_point = new_buffer_begin + (queue->buffer_end - queue->putptr);
 
     /* copy first part [putptr, buffer_end) to new_buffer_begin */
-    memcpy(new_buffer_begin, q->putptr, sizeof(int)*(q->buffer_end - q->putptr));
+    memcpy(new_buffer_begin, queue->putptr, sizeof(int)*(queue->buffer_end - queue->putptr));
 
     /* copy second part [buffer_begin, putptr) to wrap_point */
-    memcpy(wrap_point, q->buffer_begin, sizeof(int)*(q->putptr - q->buffer_begin));
+    memcpy(wrap_point, queue->buffer_begin, sizeof(int)*(queue->putptr - queue->buffer_begin));
 
     /* new buffer has been initialized, replace old buffer */
-    free(q->buffer_begin);
+    free(queue->buffer_begin);
 
-    q->buffer_begin = new_buffer_begin;
-    q->buffer_end   = new_buffer_begin + new_buffer_size;
-    q->getptr       = new_buffer_begin;
-    q->putptr       = new_buffer_begin + q->size;
+    queue->buffer_begin = new_buffer_begin;
+    queue->buffer_end   = new_buffer_begin + new_buffer_size;
+    queue->getptr       = new_buffer_begin;
+    queue->putptr       = new_buffer_begin + queue->size;
   }
 
   /* store at put pointer and advance */
-  *q->putptr++ = value;
+  *queue->putptr++ = value;
 
   /* wrap put pointer at end */
-  if(q->putptr == q->buffer_end) {
-    q->putptr = q->buffer_begin;
+  if(queue->putptr == queue->buffer_end) {
+    queue->putptr = queue->buffer_begin;
   }
 
   /* keep track of size */
-  q->size ++;
+  queue->size ++;
 
   /* return success */
   return 1;
 }
 
-int int_queue_pop(int_queue_t * q) {
-  if(q->size == 0) { return 0; }
+int int_queue_pop(int_queue_t * queue) {
+  if(queue->size == 0) { return 0; }
 
-  q->getptr++;
+  queue->getptr++;
 
   /* wrap get pointer at end */
-  if(q->getptr == q->buffer_end) {
-    q->getptr = q->buffer_begin;
+  if(queue->getptr == queue->buffer_end) {
+    queue->getptr = queue->buffer_begin;
   }
 
   /* keep track of size */
-  q->size --;
+  queue->size --;
 
   return 1;
 }
 
-int int_queue_peek(int_queue_t * q, int * value_out) {
-  if(q->size == 0) { return 0; }
+int int_queue_peek(int_queue_t * queue, int * value_out) {
+  if(queue->size == 0) { return 0; }
 
-  *value_out = *q->getptr;
+  *value_out = *queue->getptr;
 
   return 1;
 }
 
-int int_queue_at(int_queue_t * q, int * value_out, int idx) {
+int int_queue_at(int_queue_t * queue, int * value_out, int idx) {
   int * elem_ptr;
 
   if(idx < 0) { return 0; }
 
-  if(idx >= q->size) { return 0; }
+  if(idx >= queue->size) { return 0; }
 
-  elem_ptr = q->getptr + idx;
+  elem_ptr = queue->getptr + idx;
 
-  if(elem_ptr >= q->buffer_end) {
-    elem_ptr -= q->buffer_end - q->buffer_begin;
+  if(elem_ptr >= queue->buffer_end) {
+    elem_ptr -= queue->buffer_end - queue->buffer_begin;
   }
 
   *value_out = *elem_ptr;

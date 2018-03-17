@@ -17,7 +17,7 @@ typedef struct int_queue {
 /*
  * Initializes the given `int_queue_t` to a valid, empty state.
  *
- * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to pop all values
+ * Warning: No memory will be freed. Use int_queue_clear to pop all values
  * from the queue.
  */
 void int_queue_init(int_queue_t * q);

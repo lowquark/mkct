@@ -17,7 +17,7 @@ typedef struct QUEUE_STRUCT {
 /*
  * Initializes the given `QUEUE_TYPE` to a valid, empty state.
  *
- * Warning: No memory will be freed. Use OBJMAP_METHOD_CLEAR to pop all values
+ * Warning: No memory will be freed. Use QUEUE_METHOD_CLEAR to pop all values
  * from the queue.
  */
 void QUEUE_METHOD_INIT(QUEUE_TYPE * q);

@@ -2,18 +2,27 @@
 #include "H_FILE"
 
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
 
-#define INITIAL_SIZE 32
+
+/*  ========  object functionaility  ========  */
 
 
+/* This function is called after an object's memory has been allocated. */
 static void object_init(OBJECT_TYPE * obj) {
   memset(obj, 0, sizeof(OBJECT_TYPE));
 }
 
-static void object_deinit(OBJECT_TYPE * obj) {
+/* This function is called before an object's memory is freed. */
+static void object_clear(OBJECT_TYPE * obj) {
 }
+
+
+/*  ========  general functionaility  ========  */
+
+
+static const unsigned long initial_size = 32;
 
 
 void OBJQUEUE_METHOD_INIT(OBJQUEUE_TYPE * q) {
@@ -29,12 +38,12 @@ void OBJQUEUE_METHOD_CLEAR(OBJQUEUE_TYPE * q) {
 
   free(q->buffer_begin);
 
-  /* iterate over [getptr, putptr), call deinit */
+  /* iterate over [getptr, putptr), call clear */
   if(q->size) {
     do {
       valptr = q->getptr;
 
-      object_deinit(*valptr);
+      object_clear(*valptr);
 
       valptr ++;
       if(valptr == q->buffer_end) {
@@ -55,12 +64,12 @@ OBJECT_TYPE * OBJQUEUE_METHOD_PUSH(OBJQUEUE_TYPE * q) {
 
   if(!q->buffer_begin) {
     /* this buffer is null */
-    q->buffer_begin = malloc(INITIAL_SIZE*sizeof(OBJECT_TYPE));
+    q->buffer_begin = malloc(initial_size*sizeof(OBJECT_TYPE));
 
     /* couldn't alloc, escape before anything breaks */
     if(!q->buffer_begin) { return NULL; }
 
-    q->buffer_end   = q->buffer_begin + INITIAL_SIZE;
+    q->buffer_end   = q->buffer_begin + initial_size;
     q->getptr       = q->buffer_begin;
     q->putptr       = q->buffer_begin;
   } else if(q->getptr == q->putptr && q->size != 0) {
@@ -116,7 +125,7 @@ OBJECT_TYPE * OBJQUEUE_METHOD_PUSH(OBJQUEUE_TYPE * q) {
 int OBJQUEUE_METHOD_POP(OBJQUEUE_TYPE * q) {
   if(q->size == 0) { return 0; }
 
-  object_deinit(*q->getptr);
+  object_clear(*q->getptr);
 
   q->getptr++;
 

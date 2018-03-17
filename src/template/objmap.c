@@ -2,53 +2,51 @@
 #include "H_FILE"
 
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 
-typedef struct ENTRY_STRUCT {
-  struct ENTRY_STRUCT * next;
-  KEY_TYPE   key;
-  OBJECT_TYPE object;
-} ENTRY_TYPE;
 
-/*** type specific functionaility ***/
+/*  ========  key functionality  ========  */
+
 
 /* TODO: Implement hash for KEY_TYPE. */
 static unsigned long hash_key(KEY_TYPE key) {
   return (*(unsigned long*)&key);
 }
 
-/* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
- *
- * Alternatively:
- * static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
- *   return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
- * }
- */
-
+/* Called to compare keys. Must return 1 if keys match, and 0 if they don't. */
 #define compare_key(key0, key1) ((key0) == (key1))
+/* Alternatively: */
+/*
+static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
+  return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
+}
+*/
 
-/* TODO: Cleanup the key, if applicable. This function is called
- * when entries are erased, but not when they are overwritten. */
-static void deinit_key(KEY_TYPE * key) {
+
+/*  ========  object functionality  ========  */
+
+
+/* This function is called after an object's memory has been allocated. */
+static void object_init(OBJECT_TYPE * obj) {
+  memset(obj, 0, sizeof(OBJECT_TYPE));
 }
 
-/* TODO: Initialize a object, if applicable. This function is called
- * when entries created or overwritten. */
-static void init_object(OBJECT_TYPE * object) {
-  memset(object, 0, sizeof(OBJECT_TYPE));
+/* This function is called before an object's memory is freed. */
+static void object_clear(OBJECT_TYPE * obj) {
 }
 
-/* TODO: Cleanup a object, if applicable. This function is called
- * when entries are erased or overwritten. */
-static void deinit_object(OBJECT_TYPE * object) {
-  memset(object, 0, sizeof(OBJECT_TYPE));
-}
 
-/*** general functionaility ***/
+/*  ========  general functionality  ========  */
+
 
 static const unsigned long initial_size = 32;
+
+typedef struct ENTRY_STRUCT {
+  struct ENTRY_STRUCT * next;
+  KEY_TYPE   key;
+  OBJECT_TYPE object;
+} ENTRY_TYPE;
 
 static unsigned long hash_idx(KEY_TYPE key, unsigned long table_size) {
   assert(table_size > 0);
@@ -126,8 +124,7 @@ void OBJMAP_METHOD_CLEAR(OBJMAP_TYPE * map) {
       /* cache next pointer */
       ENTRY_TYPE * next = entry->next;
       /* destroy this one */
-      deinit_key(&entry->key);
-      deinit_object(&entry->object);
+      object_clear(&entry->object);
       free(entry);
       /* try again with the next */
       entry = next;
@@ -187,8 +184,8 @@ OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
 
     if(compare_key(entry->key, key)) {
       /* already exists, only deinit object, not key */
-      deinit_object(&entry->object);
-      init_object(&entry->object);
+      object_clear(&entry->object);
+      object_init(&entry->object);
       /* good as new */
       return &entry->object;
     }
@@ -207,7 +204,7 @@ OBJECT_TYPE * OBJMAP_METHOD_CREATE(OBJMAP_TYPE * map, KEY_TYPE key) {
   *slot = new_entry;
 
   /* initialize object */
-  init_object(&new_entry->object);
+  object_init(&new_entry->object);
 
   map->entry_count ++;
 
@@ -228,8 +225,7 @@ int OBJMAP_METHOD_DESTROY(OBJMAP_TYPE * map, KEY_TYPE key) {
       *slot = entry->next;
 
       /* free */
-      deinit_key(&entry->key);
-      deinit_object(&entry->object);
+      object_clear(&entry->object);
       free(entry);
 
       /* one less entry total */

@@ -1,16 +1,12 @@
 
 #include "H_FILE"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 
 
-/************************************/
-/*** type specific functionaility ***/
-/************************************/
+/*  ========  key functionality  ========  */
 
 
 /* TODO: Implement hash for KEY_TYPE. */
@@ -18,20 +14,18 @@ static unsigned long hash_key(KEY_TYPE key) {
   return (*(unsigned long*)&key);
 }
 
-/* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
- *
- * Alternatively:
+/* Called to compare keys. Must return 1 if keys match, and 0 if they don't. */
+#define compare_key(key0, key1) ((key0) == (key1))
+/* Alternatively: */
+/*
 static int compare_key(KEY_TYPE key0, KEY_TYPE key1) {
   return memcmp(&key0, &key1, sizeof(KEY_TYPE)) == 0;
 }
- */
-
-#define compare_key(key0, key1) ((key0) == (key1))
+*/
 
 
-/******************************/
-/*** general functionaility ***/
-/******************************/
+/*  ========  general functionality  ========  */
+
 
 typedef enum entry_flag {
   ENTRY_FLAG_NULL = 0,
@@ -59,7 +53,7 @@ static ENTRY_TYPE * find(MAP_TYPE * map, KEY_TYPE key) {
   /* iterate over set and unset entries in this linearly-probed chain */
   while(map->table[idx].flag != ENTRY_FLAG_NULL) {
     /* compare key if set */
-    if(map->table[idx].flag == ENTRY_FLAG_SET && map->table[idx].key == key) {
+    if(map->table[idx].flag == ENTRY_FLAG_SET && compare_key(map->table[idx].key, key)) {
       /* this is the one */
       return map->table + idx;
     }
@@ -84,7 +78,7 @@ static ENTRY_TYPE * find_insert(MAP_TYPE * map, KEY_TYPE key) {
   first_idx = idx;
 
   /* skip set entries whose keys do not match */
-  while(map->table[idx].flag == ENTRY_FLAG_SET && map->table[idx].key != key) {
+  while(map->table[idx].flag == ENTRY_FLAG_SET && !compare_key(map->table[idx].key, key)) {
     idx ++;
     /* wrap */
     if(idx >= map->table_size) { idx -= map->table_size; }

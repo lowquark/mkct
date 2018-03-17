@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+
 void LIST_METHOD_INIT(LIST_TYPE * l) {
   l->next = l;
   l->prev = l;

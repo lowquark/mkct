@@ -1,53 +1,52 @@
 #include "int_obj_map.h"
 
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 
-typedef struct int_obj_map_entry {
-  struct int_obj_map_entry * next;
-  int   key;
-  obj_t object;
-} int_obj_map_entry_t;
 
-/*** type specific functionaility ***/
+/*  ========  key functionality  ========  */
+
 
 /* TODO: Implement hash for int. */
 static unsigned long hash_key(int key) {
   return (*(unsigned long*)&key);
 }
 
-/* Called to compare keys. Must return 1 if keys match, and 0 if they don't.
- *
- * Alternatively:
- * static int compare_key(int key0, int key1) {
- *   return memcmp(&key0, &key1, sizeof(int)) == 0;
- * }
- */
-
+/* Called to compare keys. Must return 1 if keys match, and 0 if they don't. */
 #define compare_key(key0, key1) ((key0) == (key1))
+/* Alternatively: */
+/*
+static int compare_key(int key0, int key1) {
+  return memcmp(&key0, &key1, sizeof(int)) == 0;
+}
+*/
 
-/* TODO: Cleanup the key, if applicable. This function is called
- * when entries are erased, but not when they are overwritten. */
-static void deinit_key(int * key) {
+
+/*  ========  object functionality  ========  */
+
+
+/* This function is called after an object's memory has been allocated. */
+static void object_init(obj_t * obj) {
+  obj_init(obj);
 }
 
-/* TODO: Initialize a object, if applicable. This function is called
- * when entries created or overwritten. */
-static void init_object(obj_t * object) {
-  obj_init(object);
+/* This function is called before an object's memory is freed. */
+static void object_clear(obj_t * obj) {
+  obj_clear(obj);
 }
 
-/* TODO: Cleanup a object, if applicable. This function is called
- * when entries are erased or overwritten. */
-static void deinit_object(obj_t * object) {
-  obj_clear(object);
-}
 
-/*** general functionaility ***/
+/*  ========  general functionality  ========  */
+
 
 static const unsigned long initial_size = 32;
+
+typedef struct int_obj_map_entry {
+  struct int_obj_map_entry * next;
+  int   key;
+  obj_t object;
+} int_obj_map_entry_t;
 
 static unsigned long hash_idx(int key, unsigned long table_size) {
   assert(table_size > 0);
@@ -125,8 +124,7 @@ void int_obj_map_clear(int_obj_map_t * map) {
       /* cache next pointer */
       int_obj_map_entry_t * next = entry->next;
       /* destroy this one */
-      deinit_key(&entry->key);
-      deinit_object(&entry->object);
+      object_clear(&entry->object);
       free(entry);
       /* try again with the next */
       entry = next;
@@ -186,8 +184,8 @@ obj_t * int_obj_map_create(int_obj_map_t * map, int key) {
 
     if(compare_key(entry->key, key)) {
       /* already exists, only deinit object, not key */
-      deinit_object(&entry->object);
-      init_object(&entry->object);
+      object_clear(&entry->object);
+      object_init(&entry->object);
       /* good as new */
       return &entry->object;
     }
@@ -206,7 +204,7 @@ obj_t * int_obj_map_create(int_obj_map_t * map, int key) {
   *slot = new_entry;
 
   /* initialize object */
-  init_object(&new_entry->object);
+  object_init(&new_entry->object);
 
   map->entry_count ++;
 
@@ -227,8 +225,7 @@ int int_obj_map_destroy(int_obj_map_t * map, int key) {
       *slot = entry->next;
 
       /* free */
-      deinit_key(&entry->key);
-      deinit_object(&entry->object);
+      object_clear(&entry->object);
       free(entry);
 
       /* one less entry total */
