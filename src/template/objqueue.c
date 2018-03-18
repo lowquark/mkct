@@ -38,9 +38,9 @@ void OBJQUEUE_METHOD_CLEAR(OBJQUEUE_TYPE * queue) {
 
   /* iterate over [getptr, putptr), call clear and free */
   if(queue->size) {
-    do {
-      valptr = queue->getptr;
+    valptr = queue->getptr;
 
+    do {
       object_clear(*valptr);
       free(*valptr);
 
